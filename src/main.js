@@ -1,4 +1,5 @@
 import './style.css'
+import { supabase } from './supabaseClient'
 
 document.querySelector('#app').innerHTML = `
 <main class="todo-app">
@@ -19,6 +20,7 @@ document.querySelector('#app').innerHTML = `
       />
       <button class="todo-input__button" type="submit">Add</button>
     </form>
+    <p class="todo-input__status" id="todo-status" aria-live="polite"></p>
   </section>
 
   <section class="todo-items" aria-label="Todo items">
@@ -30,8 +32,10 @@ document.querySelector('#app').innerHTML = `
 const todoForm = document.querySelector('#todo-form')
 const todoInput = document.querySelector('#todo-input')
 const todoList = document.querySelector('#todo-list')
+const todoStatus = document.querySelector('#todo-status')
 
-const todos = []
+let todos = []
+let isLoading = true
 
 const escapeHtml = (value) =>
   value
@@ -41,7 +45,25 @@ const escapeHtml = (value) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
 
+const setStatus = (message = '', type = '') => {
+  todoStatus.textContent = message
+  todoStatus.classList.remove('todo-input__status--error', 'todo-input__status--success')
+
+  if (type === 'error') {
+    todoStatus.classList.add('todo-input__status--error')
+  }
+
+  if (type === 'success') {
+    todoStatus.classList.add('todo-input__status--success')
+  }
+}
+
 const renderTodos = () => {
+  if (isLoading) {
+    todoList.innerHTML = '<li class="todo-item todo-item--empty">Loading todos...</li>'
+    return
+  }
+
   if (todos.length === 0) {
     todoList.innerHTML =
       '<li class="todo-item todo-item--empty">No todos yet. Add your first task.</li>'
@@ -76,7 +98,29 @@ const renderTodos = () => {
     .join('')
 }
 
-todoForm.addEventListener('submit', (event) => {
+const loadTodos = async () => {
+  isLoading = true
+  renderTodos()
+
+  const { data, error } = await supabase
+    .from('todos')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  isLoading = false
+
+  if (error) {
+    setStatus(`Could not load todos: ${error.message}`, 'error')
+    renderTodos()
+    return
+  }
+
+  todos = data ?? []
+  setStatus('')
+  renderTodos()
+}
+
+todoForm.addEventListener('submit', async (event) => {
   event.preventDefault()
 
   const text = todoInput.value.trim()
@@ -85,18 +129,25 @@ todoForm.addEventListener('submit', (event) => {
     return
   }
 
-  todos.push({
-    id: crypto.randomUUID(),
-    text,
-    completed: false,
-  })
+  const { data, error } = await supabase
+    .from('todos')
+    .insert({ text, completed: false })
+    .select()
+    .single()
 
+  if (error) {
+    setStatus(`Could not add todo: ${error.message}`, 'error')
+    return
+  }
+
+  todos.unshift(data)
   todoInput.value = ''
   todoInput.focus()
+  setStatus('Todo added.', 'success')
   renderTodos()
 })
 
-todoList.addEventListener('click', (event) => {
+todoList.addEventListener('click', async (event) => {
   const target = event.target
   if (!(target instanceof HTMLElement)) return
 
@@ -108,14 +159,34 @@ todoList.addEventListener('click', (event) => {
   if (index === -1) return
 
   if (action === 'toggle') {
-    todos[index].completed = !todos[index].completed
+    const nextCompleted = !todos[index].completed
+    const { error } = await supabase
+      .from('todos')
+      .update({ completed: nextCompleted })
+      .eq('id', id)
+
+    if (error) {
+      setStatus(`Could not update todo: ${error.message}`, 'error')
+      return
+    }
+
+    todos[index].completed = nextCompleted
+    setStatus('Todo updated.', 'success')
   }
 
   if (action === 'delete') {
+    const { error } = await supabase.from('todos').delete().eq('id', id)
+
+    if (error) {
+      setStatus(`Could not delete todo: ${error.message}`, 'error')
+      return
+    }
+
     todos.splice(index, 1)
+    setStatus('Todo deleted.', 'success')
   }
 
   renderTodos()
 })
 
-renderTodos()
+loadTodos()

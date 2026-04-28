@@ -342,6 +342,20 @@ code {
   cursor: pointer;
 }
 
+.todo-input__status {
+  margin: var(--space-sm) 0 0;
+  min-height: 1.5rem;
+  font-size: var(--font-size-sm);
+}
+
+.todo-input__status--error {
+  color: var(--color-danger);
+}
+
+.todo-input__status--success {
+  color: var(--color-success);
+}
+
 .todo-items__list {
   list-style: none;
   margin: var(--space-xl) 0 0;
