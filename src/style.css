@@ -313,6 +313,80 @@ code {
   text-align: left;
 }
 
+.todo-app__header {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.todo-app__subtitle {
+  font-size: var(--font-size-sm);
+}
+
+.auth-panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  background: var(--color-surface-muted);
+}
+
+.auth-panel__form {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.auth-panel__label {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.auth-panel__field {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font: inherit;
+}
+
+.auth-panel__actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.auth-panel__button {
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-accent);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.auth-panel__button--secondary {
+  background: var(--color-text-primary);
+}
+
+.auth-panel__button--ghost {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.auth-panel__status {
+  margin-top: var(--space-sm);
+  min-height: 1.5rem;
+  font-size: var(--font-size-sm);
+}
+
+.auth-panel__status--error {
+  color: var(--color-danger);
+}
+
+.auth-panel__status--success {
+  color: var(--color-success);
+}
+
 .todo-input__form {
   display: grid;
   grid-template-columns: 1fr auto;
