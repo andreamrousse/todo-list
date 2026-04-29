@@ -78,6 +78,12 @@ document.querySelector('#app').innerHTML = `
       </div>
     </div>
     <ul class="todo-items__list" id="todo-list"></ul>
+    <details class="todo-completed-section" id="todo-completed-section" open hidden>
+      <summary class="todo-completed-section__summary">
+        Completed <span class="todo-completed-section__count" id="todo-completed-count">0</span>
+      </summary>
+      <ul class="todo-items__list todo-items__list--completed" id="todo-list-completed"></ul>
+    </details>
   </section>
 </main>
 
@@ -117,11 +123,15 @@ document.querySelector('#app').innerHTML = `
 const todoForm = document.querySelector('#todo-form')
 const todoInput = document.querySelector('#todo-input')
 const todoPrioritySelect = document.querySelector('#todo-priority')
+const todoListCompleted = document.querySelector('#todo-list-completed')
+const todoCompletedSection = document.querySelector('#todo-completed-section')
+const todoCompletedCount = document.querySelector('#todo-completed-count')
 const todoSearchToggle = document.querySelector('#todo-search-toggle')
 const todoSearchPanel = document.querySelector('#todo-search-panel')
 const todoSearchInput = document.querySelector('#todo-search')
 const todoFilter = document.querySelector('#todo-filter')
 const todoList = document.querySelector('#todo-list')
+const todoItemsSection = document.querySelector('.todo-items')
 const todoStatus = document.querySelector('#todo-status')
 const authForm = document.querySelector('#auth-form')
 const authEmailInput = document.querySelector('#auth-email')
@@ -218,9 +228,33 @@ const updateAuthUi = () => {
   authLogoutButton.hidden = false
 }
 
+const buildTodoItem = (todo) => `
+  <li class="todo-item todo-item--priority-${todo.priority} ${todo.completed ? 'todo-item--completed' : ''}">
+    <label class="todo-item__content">
+      <input
+        class="todo-item__checkbox"
+        type="checkbox"
+        data-action="toggle"
+        data-id="${todo.id}"
+        ${todo.completed ? 'checked' : ''}
+      />
+      <span class="todo-item__text">${escapeHtml(todo.text)}</span>
+    </label>
+    <button
+      class="todo-item__delete"
+      type="button"
+      data-action="delete"
+      data-id="${todo.id}"
+    >
+      Delete
+    </button>
+  </li>
+`
+
 const renderTodos = () => {
   if (isLoading) {
     todoList.innerHTML = '<li class="todo-item todo-item--empty">Loading todos...</li>'
+    todoCompletedSection.hidden = true
     return
   }
 
@@ -230,44 +264,29 @@ const renderTodos = () => {
   if (activeFilter !== 'all') {
     visible = visible.filter((t) => t.priority === activeFilter)
   }
-
   if (searchQuery) {
     visible = visible.filter((t) => t.text.toLowerCase().includes(searchQuery))
   }
 
-  if (visible.length === 0) {
+  const active = visible.filter((t) => !t.completed)
+  const done = visible.filter((t) => t.completed)
+
+  if (active.length === 0) {
     todoList.innerHTML = `<li class="todo-item todo-item--empty">${
       searchQuery ? 'No todos match your search.' : 'No todos yet. Add your first task.'
     }</li>`
-    return
+  } else {
+    todoList.innerHTML = active.map(buildTodoItem).join('')
   }
 
-  todoList.innerHTML = visible
-    .map(
-      (todo) => `
-        <li class="todo-item todo-item--priority-${todo.priority} ${todo.completed ? 'todo-item--completed' : ''}">
-          <label class="todo-item__content">
-            <input
-              class="todo-item__checkbox"
-              type="checkbox"
-              data-action="toggle"
-              data-id="${todo.id}"
-              ${todo.completed ? 'checked' : ''}
-            />
-            <span class="todo-item__text">${escapeHtml(todo.text)}</span>
-          </label>
-          <button
-            class="todo-item__delete"
-            type="button"
-            data-action="delete"
-            data-id="${todo.id}"
-          >
-            Delete
-          </button>
-        </li>
-      `
-    )
-    .join('')
+  if (done.length > 0) {
+    todoCompletedSection.hidden = false
+    todoCompletedCount.textContent = done.length
+    todoListCompleted.innerHTML = done.map(buildTodoItem).join('')
+  } else {
+    todoCompletedSection.hidden = true
+    todoListCompleted.innerHTML = ''
+  }
 }
 
 const loadTodos = async () => {
@@ -477,7 +496,7 @@ authLogoutButton.addEventListener('click', async () => {
   }
 })
 
-todoList.addEventListener('click', async (event) => {
+todoItemsSection.addEventListener('click', async (event) => {
   const target = event.target
   if (!(target instanceof HTMLElement)) return
 

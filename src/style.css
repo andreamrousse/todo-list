@@ -633,6 +633,51 @@ code {
   gap: var(--space-sm);
 }
 
+.todo-completed-section {
+  margin-top: var(--space-xl);
+}
+
+.todo-completed-section__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  list-style: none;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  user-select: none;
+}
+
+.todo-completed-section__summary::-webkit-details-marker {
+  display: none;
+}
+
+.todo-completed-section__summary::before {
+  content: '';
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
+.todo-completed-section[open] .todo-completed-section__summary::before {
+  transform: rotate(-135deg);
+  margin-bottom: -2px;
+}
+
+.todo-completed-section__count {
+  font-variant-numeric: tabular-nums;
+}
+
+.todo-items__list--completed {
+  opacity: 0.6;
+}
+
 .todo-item {
   display: flex;
   align-items: center;
