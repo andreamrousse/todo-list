@@ -15,7 +15,7 @@ document.querySelector('#app').innerHTML = `
     <p class="todo-app__subtitle" id="auth-description"></p>
     <div class="todo-app__auth-actions">
       <button class="todo-app__auth-button" type="button" id="open-auth-modal">
-        Log in / Create account
+        Log in
       </button>
       <button class="todo-app__auth-button todo-app__auth-button--ghost" type="button" id="auth-logout">
         Log out
@@ -45,11 +45,37 @@ document.querySelector('#app').innerHTML = `
   </section>
 
   <section class="todo-items" aria-label="Todo items">
-    <div class="todo-filter" id="todo-filter" role="group" aria-label="Filter by priority">
-      <button class="todo-filter__button todo-filter__button--active" data-filter="all">All</button>
-      <button class="todo-filter__button" data-filter="high">High</button>
-      <button class="todo-filter__button" data-filter="medium">Medium</button>
-      <button class="todo-filter__button" data-filter="low">Low</button>
+    <div class="todo-items__toolbar">
+      <div class="todo-filter" id="todo-filter" role="group" aria-label="Filter by priority">
+        <button class="todo-filter__button todo-filter__button--active" data-filter="all">All</button>
+        <button class="todo-filter__button" data-filter="high">High</button>
+        <button class="todo-filter__button" data-filter="medium">Medium</button>
+        <button class="todo-filter__button" data-filter="low">Low</button>
+      </div>
+      <div class="todo-search-wrapper">
+        <div class="todo-search" id="todo-search-panel">
+          <input
+            class="todo-search__input"
+            id="todo-search"
+            type="search"
+            placeholder="Search tasks..."
+            autocomplete="off"
+            aria-label="Search tasks"
+          />
+        </div>
+        <button
+          class="todo-items__search-toggle"
+          id="todo-search-toggle"
+          type="button"
+          aria-label="Toggle search"
+          aria-expanded="false"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+            <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <ul class="todo-items__list" id="todo-list"></ul>
   </section>
@@ -91,6 +117,9 @@ document.querySelector('#app').innerHTML = `
 const todoForm = document.querySelector('#todo-form')
 const todoInput = document.querySelector('#todo-input')
 const todoPrioritySelect = document.querySelector('#todo-priority')
+const todoSearchToggle = document.querySelector('#todo-search-toggle')
+const todoSearchPanel = document.querySelector('#todo-search-panel')
+const todoSearchInput = document.querySelector('#todo-search')
 const todoFilter = document.querySelector('#todo-filter')
 const todoList = document.querySelector('#todo-list')
 const todoStatus = document.querySelector('#todo-status')
@@ -108,11 +137,12 @@ const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
 
 let todos = []
 let activeFilter = 'all'
+let searchQuery = ''
+let isSearchOpen = false
 let isLoading = true
 let currentUser = null
 let isAnonymous = true
 let hasBootstrapped = false
-let hasHandledInitialChoice = false
 
 const escapeHtml = (value) =>
   value
@@ -164,7 +194,7 @@ const closeAuthModal = () => {
 
 const updateAuthUi = () => {
   if (!currentUser) {
-    authDescription.textContent = 'Signing you in...'
+    authDescription.textContent = ''
     authEmailInput.disabled = true
     authPasswordInput.disabled = true
     openAuthModalButton.hidden = true
@@ -173,7 +203,7 @@ const updateAuthUi = () => {
   }
 
   if (isAnonymous) {
-    authDescription.textContent = 'You are using a guest session.'
+    authDescription.textContent = ''
     authEmailInput.disabled = false
     authPasswordInput.disabled = false
     openAuthModalButton.hidden = false
@@ -201,9 +231,14 @@ const renderTodos = () => {
     visible = visible.filter((t) => t.priority === activeFilter)
   }
 
+  if (searchQuery) {
+    visible = visible.filter((t) => t.text.toLowerCase().includes(searchQuery))
+  }
+
   if (visible.length === 0) {
-    todoList.innerHTML =
-      '<li class="todo-item todo-item--empty">No todos yet. Add your first task.</li>'
+    todoList.innerHTML = `<li class="todo-item todo-item--empty">${
+      searchQuery ? 'No todos match your search.' : 'No todos yet. Add your first task.'
+    }</li>`
     return
   }
 
@@ -325,9 +360,6 @@ const bootstrapApp = async () => {
     setAuthStatus(`Could not start session: ${error.message}`, 'error')
   } finally {
     hasBootstrapped = true
-    if (isAnonymous) {
-      openAuthModal({ clearStatus: true })
-    }
     updateAuthUi()
   }
 }
@@ -414,7 +446,6 @@ authForm.addEventListener('submit', async (event) => {
     }
     await loadTodos()
     authPasswordInput.value = ''
-    hasHandledInitialChoice = true
     closeAuthModal()
     setAuthStatus('Account connected and todos merged.', 'success')
   } catch (error) {
@@ -424,11 +455,9 @@ authForm.addEventListener('submit', async (event) => {
   }
 })
 
-continueGuestButton.addEventListener('click', async () => {
-  hasHandledInitialChoice = true
+continueGuestButton.addEventListener('click', () => {
   closeAuthModal()
   setAuthStatus('')
-  updateAuthUi()
 })
 
 openAuthModalButton.addEventListener('click', () => {
@@ -441,8 +470,6 @@ authLogoutButton.addEventListener('click', async () => {
     await ensureSession()
     await refreshAuthState()
     await loadTodos()
-    openAuthModal({ clearStatus: true })
-    hasHandledInitialChoice = true
   } catch (error) {
     setAuthStatus(`Could not sign out: ${error.message}`, 'error')
   } finally {
@@ -493,6 +520,24 @@ todoList.addEventListener('click', async (event) => {
   renderTodos()
 })
 
+todoSearchToggle.addEventListener('click', () => {
+  isSearchOpen = !isSearchOpen
+  todoSearchPanel.classList.toggle('todo-search--open', isSearchOpen)
+  todoSearchToggle.setAttribute('aria-expanded', String(isSearchOpen))
+  if (isSearchOpen) {
+    todoSearchInput.focus()
+  } else {
+    todoSearchInput.value = ''
+    searchQuery = ''
+    renderTodos()
+  }
+})
+
+todoSearchInput.addEventListener('input', () => {
+  searchQuery = todoSearchInput.value.trim().toLowerCase()
+  renderTodos()
+})
+
 todoFilter.addEventListener('click', (event) => {
   const target = event.target
   if (!(target instanceof HTMLButtonElement)) return
@@ -514,9 +559,6 @@ supabase.auth.onAuthStateChange(async () => {
   try {
     await refreshAuthState()
     await loadTodos()
-    if (isAnonymous && !hasHandledInitialChoice) {
-      openAuthModal()
-    }
   } catch (error) {
     setAuthStatus(`Could not refresh auth state: ${error.message}`, 'error')
   }
