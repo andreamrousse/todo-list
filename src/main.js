@@ -34,12 +34,23 @@ document.querySelector('#app').innerHTML = `
         placeholder="What needs to be done?"
         autocomplete="off"
       />
+      <select class="todo-input__priority" id="todo-priority" name="priority" aria-label="Priority">
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
       <button class="todo-input__button" type="submit">Add</button>
     </form>
     <p class="todo-input__status" id="todo-status" aria-live="polite"></p>
   </section>
 
   <section class="todo-items" aria-label="Todo items">
+    <div class="todo-filter" id="todo-filter" role="group" aria-label="Filter by priority">
+      <button class="todo-filter__button todo-filter__button--active" data-filter="all">All</button>
+      <button class="todo-filter__button" data-filter="high">High</button>
+      <button class="todo-filter__button" data-filter="medium">Medium</button>
+      <button class="todo-filter__button" data-filter="low">Low</button>
+    </div>
     <ul class="todo-items__list" id="todo-list"></ul>
   </section>
 </main>
@@ -79,6 +90,8 @@ document.querySelector('#app').innerHTML = `
 
 const todoForm = document.querySelector('#todo-form')
 const todoInput = document.querySelector('#todo-input')
+const todoPrioritySelect = document.querySelector('#todo-priority')
+const todoFilter = document.querySelector('#todo-filter')
 const todoList = document.querySelector('#todo-list')
 const todoStatus = document.querySelector('#todo-status')
 const authForm = document.querySelector('#auth-form')
@@ -91,7 +104,10 @@ const openAuthModalButton = document.querySelector('#open-auth-modal')
 const continueGuestButton = document.querySelector('#continue-guest')
 const authLogoutButton = document.querySelector('#auth-logout')
 
+const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
+
 let todos = []
+let activeFilter = 'all'
 let isLoading = true
 let currentUser = null
 let isAnonymous = true
@@ -178,16 +194,23 @@ const renderTodos = () => {
     return
   }
 
-  if (todos.length === 0) {
+  let visible = [...todos].sort(
+    (a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
+  )
+  if (activeFilter !== 'all') {
+    visible = visible.filter((t) => t.priority === activeFilter)
+  }
+
+  if (visible.length === 0) {
     todoList.innerHTML =
       '<li class="todo-item todo-item--empty">No todos yet. Add your first task.</li>'
     return
   }
 
-  todoList.innerHTML = todos
+  todoList.innerHTML = visible
     .map(
       (todo) => `
-        <li class="todo-item ${todo.completed ? 'todo-item--completed' : ''}">
+        <li class="todo-item todo-item--priority-${todo.priority} ${todo.completed ? 'todo-item--completed' : ''}">
           <label class="todo-item__content">
             <input
               class="todo-item__checkbox"
@@ -256,6 +279,7 @@ const mergeAnonymousTodosIntoUser = async (anonTodos, destinationUserId) => {
     .filter((todo) => !existingKeys.has(getTodoDedupeKey(todo)))
     .map((todo) => ({
       text: todo.text,
+      priority: todo.priority ?? 'medium',
       completed: todo.completed,
       created_at: todo.created_at,
       user_id: destinationUserId
@@ -276,7 +300,7 @@ const collectCurrentAnonymousTodos = async () => {
 
   const { data, error } = await supabase
     .from('todos')
-    .select('text, completed, created_at')
+    .select('text, priority, completed, created_at')
     .eq('user_id', currentUser.id)
 
   if (error) {
@@ -317,9 +341,11 @@ todoForm.addEventListener('submit', async (event) => {
     return
   }
 
+  const priority = todoPrioritySelect.value
+
   const { data, error } = await supabase
     .from('todos')
-    .insert({ text, completed: false, user_id: currentUser.id })
+    .insert({ text, priority, completed: false, user_id: currentUser.id })
     .select()
     .single()
 
@@ -330,6 +356,7 @@ todoForm.addEventListener('submit', async (event) => {
 
   todos.unshift(data)
   todoInput.value = ''
+  todoPrioritySelect.value = 'medium'
   todoInput.focus()
   setStatus('Todo added.', 'success')
   renderTodos()
@@ -463,6 +490,19 @@ todoList.addEventListener('click', async (event) => {
     setStatus('Todo deleted.', 'success')
   }
 
+  renderTodos()
+})
+
+todoFilter.addEventListener('click', (event) => {
+  const target = event.target
+  if (!(target instanceof HTMLButtonElement)) return
+  const filter = target.dataset.filter
+  if (!filter) return
+
+  activeFilter = filter
+  todoFilter.querySelectorAll('.todo-filter__button').forEach((btn) => {
+    btn.classList.toggle('todo-filter__button--active', btn.dataset.filter === filter)
+  })
   renderTodos()
 })
 
