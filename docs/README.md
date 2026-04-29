@@ -9,6 +9,7 @@ This is a todo list app built with Vite + Vanilla JS and synced to Supabase.
 - Persist todos in Supabase
 - Automatic anonymous guest session on first visit
 - Email/password authentication
+- Mandatory first-load auth modal (log in, create account, or continue as guest)
 - Per-user todo isolation with RLS
 - Merge guest-session todos into account on signup/login
 
@@ -63,6 +64,12 @@ Enable both of the following in your Supabase project:
 - **Authentication > Providers > Anonymous Sign-Ins**: enabled
 
 This app automatically signs visitors in anonymously so they can use todos immediately.
+On first load, users see an auth modal with:
+- Log in
+- Create account
+- Continue as guest
+
+If they continue as guest, they can still open auth later from the header button.
 When a guest signs up or logs in with email/password, guest todos are merged into the account (duplicates are skipped).
 
 ## Run app

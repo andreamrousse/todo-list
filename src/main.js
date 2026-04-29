@@ -13,28 +13,14 @@ document.querySelector('#app').innerHTML = `
   <header class="todo-app__header">
     <h1 class="todo-app__title">Todo List</h1>
     <p class="todo-app__subtitle" id="auth-description"></p>
-    <section class="auth-panel" aria-label="Account controls">
-      <form class="auth-panel__form" id="auth-form">
-        <label class="auth-panel__label" for="auth-email">Email</label>
-        <input class="auth-panel__field" id="auth-email" name="email" type="email" autocomplete="email" />
-        <label class="auth-panel__label" for="auth-password">Password</label>
-        <input
-          class="auth-panel__field"
-          id="auth-password"
-          name="password"
-          type="password"
-          autocomplete="current-password"
-        />
-        <div class="auth-panel__actions">
-          <button class="auth-panel__button" type="submit" data-auth-action="signup">Create account</button>
-          <button class="auth-panel__button auth-panel__button--secondary" type="submit" data-auth-action="login">
-            Log in
-          </button>
-          <button class="auth-panel__button auth-panel__button--ghost" type="button" id="auth-logout">Log out</button>
-        </div>
-      </form>
-      <p class="auth-panel__status" id="auth-status" aria-live="polite"></p>
-    </section>
+    <div class="todo-app__auth-actions">
+      <button class="todo-app__auth-button" type="button" id="open-auth-modal">
+        Log in / Create account
+      </button>
+      <button class="todo-app__auth-button todo-app__auth-button--ghost" type="button" id="auth-logout">
+        Log out
+      </button>
+    </div>
   </header>
 
   <section class="todo-input" aria-label="Add a new todo">
@@ -57,6 +43,38 @@ document.querySelector('#app').innerHTML = `
     <ul class="todo-items__list" id="todo-list"></ul>
   </section>
 </main>
+
+<section class="auth-modal" id="auth-modal" aria-label="Authentication">
+  <div class="auth-modal__backdrop"></div>
+  <div class="auth-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <h2 class="auth-modal__title" id="auth-modal-title">Welcome</h2>
+    <p class="auth-modal__description">Log in or create an account. You can also continue as a guest.</p>
+    <form class="auth-modal__form" id="auth-form">
+      <label class="auth-modal__label" for="auth-email">Email</label>
+      <input class="auth-modal__field" id="auth-email" name="email" type="email" autocomplete="email" />
+      <label class="auth-modal__label" for="auth-password">Password</label>
+      <input
+        class="auth-modal__field"
+        id="auth-password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+      />
+      <div class="auth-modal__actions">
+        <button class="auth-modal__button auth-modal__button--primary" type="submit" data-auth-action="login">
+          Log in
+        </button>
+        <button class="auth-modal__button auth-modal__button--secondary" type="submit" data-auth-action="signup">
+          Create account
+        </button>
+      </div>
+    </form>
+    <button class="auth-modal__button auth-modal__button--ghost" type="button" id="continue-guest">
+      Continue as guest
+    </button>
+    <p class="auth-modal__status" id="auth-status" aria-live="polite"></p>
+  </div>
+</section>
 `
 
 const todoForm = document.querySelector('#todo-form')
@@ -68,6 +86,9 @@ const authEmailInput = document.querySelector('#auth-email')
 const authPasswordInput = document.querySelector('#auth-password')
 const authStatus = document.querySelector('#auth-status')
 const authDescription = document.querySelector('#auth-description')
+const authModal = document.querySelector('#auth-modal')
+const openAuthModalButton = document.querySelector('#open-auth-modal')
+const continueGuestButton = document.querySelector('#continue-guest')
 const authLogoutButton = document.querySelector('#auth-logout')
 
 let todos = []
@@ -75,6 +96,7 @@ let isLoading = true
 let currentUser = null
 let isAnonymous = true
 let hasBootstrapped = false
+let hasHandledInitialChoice = false
 
 const escapeHtml = (value) =>
   value
@@ -99,32 +121,46 @@ const setStatus = (message = '', type = '') => {
 
 const setAuthStatus = (message = '', type = '') => {
   authStatus.textContent = message
-  authStatus.classList.remove('auth-panel__status--error', 'auth-panel__status--success')
+  authStatus.classList.remove('auth-modal__status--error', 'auth-modal__status--success')
 
   if (type === 'error') {
-    authStatus.classList.add('auth-panel__status--error')
+    authStatus.classList.add('auth-modal__status--error')
   }
 
   if (type === 'success') {
-    authStatus.classList.add('auth-panel__status--success')
+    authStatus.classList.add('auth-modal__status--success')
   }
 }
 
 const getTodoDedupeKey = (todo) => `${todo.text}::${todo.completed ? '1' : '0'}::${todo.created_at}`
+
+const openAuthModal = (options = {}) => {
+  const { clearStatus = false } = options
+  authModal.classList.add('auth-modal--open')
+  if (clearStatus) {
+    setAuthStatus('')
+  }
+}
+
+const closeAuthModal = () => {
+  authModal.classList.remove('auth-modal--open')
+}
 
 const updateAuthUi = () => {
   if (!currentUser) {
     authDescription.textContent = 'Signing you in...'
     authEmailInput.disabled = true
     authPasswordInput.disabled = true
+    openAuthModalButton.hidden = true
     authLogoutButton.hidden = true
     return
   }
 
   if (isAnonymous) {
-    authDescription.textContent = 'You are using a guest session. Create an account to save across devices.'
+    authDescription.textContent = 'You are using a guest session.'
     authEmailInput.disabled = false
     authPasswordInput.disabled = false
+    openAuthModalButton.hidden = false
     authLogoutButton.hidden = true
     return
   }
@@ -132,6 +168,7 @@ const updateAuthUi = () => {
   authDescription.textContent = `Logged in as ${currentUser.email ?? 'your account'}.`
   authEmailInput.disabled = true
   authPasswordInput.disabled = true
+  openAuthModalButton.hidden = true
   authLogoutButton.hidden = false
 }
 
@@ -264,6 +301,9 @@ const bootstrapApp = async () => {
     setAuthStatus(`Could not start session: ${error.message}`, 'error')
   } finally {
     hasBootstrapped = true
+    if (isAnonymous) {
+      openAuthModal({ clearStatus: true })
+    }
     updateAuthUi()
   }
 }
@@ -298,7 +338,7 @@ todoForm.addEventListener('submit', async (event) => {
 authForm.addEventListener('submit', async (event) => {
   event.preventDefault()
 
-  if (!hasBootstrapped || !isAnonymous) {
+  if (!hasBootstrapped) {
     return
   }
 
@@ -319,8 +359,13 @@ authForm.addEventListener('submit', async (event) => {
     return
   }
 
+  const startedAsAnonymous = isAnonymous
+  let anonymousTodos = []
+
   try {
-    const anonymousTodos = await collectCurrentAnonymousTodos()
+    if (startedAsAnonymous) {
+      anonymousTodos = await collectCurrentAnonymousTodos()
+    }
 
     if (authAction === 'signup') {
       await signUpWithEmail(email, password)
@@ -337,9 +382,13 @@ authForm.addEventListener('submit', async (event) => {
       return
     }
 
-    await mergeAnonymousTodosIntoUser(anonymousTodos, currentUser.id)
+    if (startedAsAnonymous) {
+      await mergeAnonymousTodosIntoUser(anonymousTodos, currentUser.id)
+    }
     await loadTodos()
     authPasswordInput.value = ''
+    hasHandledInitialChoice = true
+    closeAuthModal()
     setAuthStatus('Account connected and todos merged.', 'success')
   } catch (error) {
     setAuthStatus(`Could not complete auth: ${error.message}`, 'error')
@@ -348,13 +397,25 @@ authForm.addEventListener('submit', async (event) => {
   }
 })
 
+continueGuestButton.addEventListener('click', async () => {
+  hasHandledInitialChoice = true
+  closeAuthModal()
+  setAuthStatus('')
+  updateAuthUi()
+})
+
+openAuthModalButton.addEventListener('click', () => {
+  openAuthModal({ clearStatus: true })
+})
+
 authLogoutButton.addEventListener('click', async () => {
   try {
     await signOut()
     await ensureSession()
     await refreshAuthState()
     await loadTodos()
-    setAuthStatus('Signed out. You are back in a guest session.', 'success')
+    openAuthModal({ clearStatus: true })
+    hasHandledInitialChoice = true
   } catch (error) {
     setAuthStatus(`Could not sign out: ${error.message}`, 'error')
   } finally {
@@ -413,6 +474,9 @@ supabase.auth.onAuthStateChange(async () => {
   try {
     await refreshAuthState()
     await loadTodos()
+    if (isAnonymous && !hasHandledInitialChoice) {
+      openAuthModal()
+    }
   } catch (error) {
     setAuthStatus(`Could not refresh auth state: ${error.message}`, 'error')
   }
