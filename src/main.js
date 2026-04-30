@@ -1,4 +1,6 @@
 import './style.css'
+import 'flatpickr/dist/flatpickr.min.css'
+import flatpickr from 'flatpickr'
 import {
   ensureSession,
   getCurrentUser,
@@ -25,28 +27,48 @@ document.querySelector('#app').innerHTML = `
 
   <section class="todo-input" aria-label="Add a new todo">
     <form class="todo-input__form" id="todo-form">
-      <label class="todo-input__label" for="todo-input">New task</label>
-      <input
-        class="todo-input__field"
-        id="todo-input"
-        name="todo"
-        type="text"
-        placeholder="What needs to be done?"
-        autocomplete="off"
-      />
-      <input
-        class="todo-input__date"
-        id="todo-due-date"
-        type="date"
-        aria-label="Due date (optional)"
-      />
-      <select class="todo-input__priority" id="todo-priority" name="priority" aria-label="Priority">
-        <option value="" selected>Priority</option>
-        <option value="high">High</option>
-        <option value="medium">Medium</option>
-        <option value="low">Low</option>
-        <option value="trivial">Trivial</option>
-      </select>
+      <div class="todo-input__group todo-input__group--field">
+        <label class="todo-input__field-label" for="todo-input">Task</label>
+        <input
+          class="todo-input__field"
+          id="todo-input"
+          name="todo"
+          type="text"
+          placeholder="What needs to be done?"
+          autocomplete="off"
+        />
+      </div>
+      <div class="todo-input__group todo-input__group--date">
+        <label class="todo-input__field-label" for="todo-due-date-btn">Due date</label>
+        <div class="todo-input__date-wrap" id="todo-due-date-wrap">
+          <input id="todo-due-date" type="text" data-input readonly aria-label="Due date (optional)" />
+          <button class="todo-input__date-btn" id="todo-due-date-btn" type="button" data-toggle aria-label="Set due date" title="Set due date">
+              <span class="todo-input__date-label" id="todo-due-date-label">mm/dd/yyyy</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M8 2v4"/>
+              <path d="M16 2v4"/>
+              <rect width="18" height="18" x="3" y="4" rx="2"/>
+              <path d="M3 10h18"/>
+              <path d="M8 14h.01"/>
+              <path d="M12 14h.01"/>
+              <path d="M16 14h.01"/>
+              <path d="M8 18h.01"/>
+              <path d="M12 18h.01"/>
+              <path d="M16 18h.01"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="todo-input__group todo-input__group--priority">
+        <label class="todo-input__field-label" for="todo-priority">Priority</label>
+        <select class="todo-input__priority" id="todo-priority" name="priority" aria-label="Priority">
+          <option value="" selected>Priority</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+          <option value="trivial">Trivial</option>
+        </select>
+      </div>
       <button class="todo-input__button" type="submit">Add</button>
     </form>
     <p class="todo-input__status" id="todo-status" aria-live="polite"></p>
@@ -157,6 +179,9 @@ const todoForm = document.querySelector('#todo-form')
 const todoInput = document.querySelector('#todo-input')
 const todoPrioritySelect = document.querySelector('#todo-priority')
 const todoDueDateInput = document.querySelector('#todo-due-date')
+const todoDueDateWrap = document.querySelector('#todo-due-date-wrap')
+const todoDueDateBtn = document.querySelector('#todo-due-date-btn')
+const todoDueDateLabel = document.querySelector('#todo-due-date-label')
 const todoListCompleted = document.querySelector('#todo-list-completed')
 const todoPendingSection = document.querySelector('#todo-pending-section')
 const todoPendingCount = document.querySelector('#todo-pending-count')
@@ -295,7 +320,7 @@ const formatDueDate = (iso) => {
   tomorrow.setDate(tomorrow.getDate() + 1)
   const tomorrowIso = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
   if (iso === tomorrowIso) return 'Tomorrow'
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 const dueDateChip = (todo) => {
@@ -335,7 +360,22 @@ const buildTodoItem = (todo) => `
   </li>
 `
 
-todoDueDateInput.min = todayIsoDate()
+const duePicker = flatpickr(todoDueDateWrap, {
+  wrap: true,
+  disableMobile: true,
+  dateFormat: 'Y-m-d',
+  minDate: 'today',
+  monthSelectorType: 'static',
+  onChange(selectedDates) {
+    if (selectedDates.length > 0) {
+      todoDueDateLabel.textContent = formatDueDate(duePicker.formatDate(selectedDates[0], 'Y-m-d'))
+      todoDueDateBtn.classList.add('todo-input__date-btn--active')
+    } else {
+      todoDueDateLabel.textContent = 'mm/dd/yyyy'
+      todoDueDateBtn.classList.remove('todo-input__date-btn--active')
+    }
+  },
+})
 
 const renderTodos = () => {
   if (isLoading) {
@@ -498,7 +538,7 @@ todoForm.addEventListener('submit', async (event) => {
   todos.unshift(data)
   todoInput.value = ''
   todoPrioritySelect.value = ''
-  todoDueDateInput.value = ''
+  duePicker.clear()
   todoInput.focus()
   setStatus('')
   shouldAnimateAdd = true

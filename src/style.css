@@ -551,34 +551,42 @@ code {
 .todo-input__form {
   display: grid;
   grid-template-columns: 1fr auto auto auto;
-  grid-template-areas: 'field date priority button';
+  grid-template-areas: 'grp-field grp-date grp-priority button';
   gap: var(--space-sm);
+  align-items: end;
 }
 
 @media (max-width: 540px) {
   .todo-input__form {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      'field field'
-      'date priority'
-      'button button';
+      'grp-field  grp-field'
+      'grp-date   grp-priority'
+      'button     button';
   }
 }
 
-.todo-input__label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+.todo-input__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.todo-input__group--field    { grid-area: grp-field; }
+.todo-input__group--date     { grid-area: grp-date; }
+.todo-input__group--priority { grid-area: grp-priority; }
+
+.todo-input__field-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-left: var(--space-sm);
+  user-select: none;
 }
 
 .todo-input__field {
-  grid-area: field;
   padding: 0.625rem var(--space-md);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
@@ -601,7 +609,6 @@ code {
 }
 
 .todo-input__priority {
-  grid-area: priority;
   appearance: none;
   -webkit-appearance: none;
   padding: 0.625rem var(--space-2xl) 0.625rem var(--space-md);
@@ -634,40 +641,165 @@ code {
   color: var(--color-text-tertiary);
 }
 
-.todo-input__date {
-  grid-area: date;
+.todo-input__date-wrap {
+  position: relative;
+}
+
+.todo-input__date-wrap input[data-input] {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.todo-input__date-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
   padding: 0.625rem var(--space-md);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: var(--color-surface-muted);
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   font: inherit;
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
-.todo-input__date:hover {
+.todo-input__date-btn:hover {
   background: var(--color-border);
+  color: var(--color-text-primary);
 }
 
-.todo-input__date:focus {
+.todo-input__date-btn:focus-visible {
   outline: none;
-  background: var(--color-surface);
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
 }
 
-.todo-input__date::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.15s ease;
+.todo-input__date-btn--active {
+  background: rgba(0, 113, 227, 0.08);
+  color: var(--color-accent);
+  border-color: rgba(0, 113, 227, 0.2);
 }
 
-.todo-input__date:hover::-webkit-calendar-picker-indicator,
-.todo-input__date:focus::-webkit-calendar-picker-indicator {
-  opacity: 1;
+.todo-input__date-btn--active:hover {
+  background: rgba(0, 113, 227, 0.13);
+  color: var(--color-accent);
+}
+
+.todo-input__date-label {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+}
+
+.todo-input__date-btn--active .todo-input__date-label {
+  color: inherit;
+}
+
+/* ── Flatpickr calendar theme ─────────────────────────────────── */
+.flatpickr-calendar {
+  font-family: inherit;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-sm);
+}
+
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-current-month input.cur-year {
+  background: transparent;
+  color: var(--color-text-primary);
+  fill: var(--color-text-primary);
+  font-family: inherit;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+}
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+  fill: var(--color-text-secondary);
+  padding: 6px 8px;
+}
+
+.flatpickr-months .flatpickr-prev-month:hover,
+.flatpickr-months .flatpickr-next-month:hover {
+  fill: var(--color-text-primary);
+}
+
+.flatpickr-weekdays {
+  background: transparent;
+}
+
+span.flatpickr-weekday {
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.flatpickr-day {
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  border: none;
+  height: 34px;
+  line-height: 34px;
+  max-width: 34px;
+}
+
+.flatpickr-day:hover,
+.flatpickr-day.prevMonthDay:hover,
+.flatpickr-day.nextMonthDay:hover {
+  background: var(--color-surface-muted);
+  border: none;
+}
+
+.flatpickr-day.today {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+}
+
+.flatpickr-day.today:hover {
+  background: rgba(0, 113, 227, 0.08);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover {
+  color: var(--color-border-strong);
+}
+
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+  color: var(--color-text-tertiary);
+}
+
+.numInputWrapper span.arrowUp,
+.numInputWrapper span.arrowDown {
+  border: none;
+}
+
+.numInputWrapper:hover {
+  background: transparent;
 }
 
 .todo-input__button {
