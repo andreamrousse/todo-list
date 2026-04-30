@@ -417,7 +417,7 @@ todoForm.addEventListener('submit', async (event) => {
   todoInput.value = ''
   todoPrioritySelect.value = 'medium'
   todoInput.focus()
-  setStatus('Todo added.', 'success')
+  setStatus('')
   renderTodos()
 })
 
