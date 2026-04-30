@@ -35,9 +35,9 @@ document.querySelector('#app').innerHTML = `
         autocomplete="off"
       />
       <select class="todo-input__priority" id="todo-priority" name="priority" aria-label="Priority">
-        <option value="high">High</option>
-        <option value="medium" selected>Medium</option>
-        <option value="low">Low</option>
+        <option value="high">High priority</option>
+        <option value="medium" selected>Medium priority</option>
+        <option value="low">Low priority</option>
       </select>
       <button class="todo-input__button" type="submit">Add</button>
     </form>
