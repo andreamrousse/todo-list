@@ -9,9 +9,9 @@
   --color-text-tertiary: #86868b;
   --color-border: rgba(0, 0, 0, 0.08);
   --color-border-strong: rgba(0, 0, 0, 0.14);
-  --color-accent: #0071e3;
-  --color-accent-hover: #0077ed;
-  --color-accent-soft: rgba(0, 113, 227, 0.1);
+  --color-accent: #1e3a8a;
+  --color-accent-hover: #1e40af;
+  --color-accent-soft: rgba(30, 58, 138, 0.1);
   --color-success: #30d158;
   --color-danger: #ff3b30;
   --color-warning: #ff9f0a;
@@ -384,11 +384,11 @@ code {
 }
 
 .todo-app__auth-button {
-  border: 1.5px solid var(--color-border-strong);
+  border: 1.5px solid #111;
   border-radius: var(--radius-pill);
   padding: 0.375rem var(--space-md);
-  background: transparent;
-  color: var(--color-text-primary);
+  background: #111;
+  color: #fff;
   font: inherit;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
@@ -397,12 +397,13 @@ code {
 }
 
 .todo-app__auth-button:hover {
-  background: var(--color-border);
-  border-color: var(--color-text-tertiary);
+  background: #333;
+  border-color: #333;
 }
 
 .todo-app__auth-button--ghost {
   background: transparent;
+  border-color: var(--color-border-strong);
   color: var(--color-text-secondary);
 }
 
@@ -467,19 +468,24 @@ code {
 
 .auth-modal__field {
   padding: 0.625rem var(--space-md);
-  border: 1px solid transparent;
-  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
   border-radius: var(--radius-md);
   font: inherit;
   font-size: var(--font-size-md);
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
+.auth-modal__field:hover {
+  background: var(--color-surface-muted);
+  border-color: var(--color-text-tertiary);
+}
+
 .auth-modal__field:focus {
   outline: none;
   background: var(--color-surface);
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
 }
 
 .auth-modal__actions {
@@ -490,39 +496,45 @@ code {
 }
 
 .auth-modal__button {
-  border: 0;
+  border: 1.5px solid transparent;
   border-radius: var(--radius-pill);
-  padding: 0.5rem var(--space-md);
-  background: var(--color-accent);
-  color: #fff;
+  padding: 0.5rem var(--space-lg);
   font: inherit;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .auth-modal__button--primary {
   background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
 }
 
 .auth-modal__button--primary:hover {
   background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
 }
 
 .auth-modal__button--secondary {
-  background: var(--color-surface-muted);
+  background: transparent;
   color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
 }
 
 .auth-modal__button--secondary:hover {
   background: var(--color-border);
+  border-color: var(--color-text-tertiary);
 }
 
 .auth-modal__button--ghost {
   background: transparent;
   color: var(--color-text-secondary);
   font-weight: var(--font-weight-medium);
+  width: 100%;
+  text-align: center;
+  border-color: transparent;
 }
 
 .auth-modal__button--ghost:hover {
@@ -621,9 +633,9 @@ code {
 
 .todo-input__field {
   padding: 0.625rem var(--space-md);
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
-  background: var(--color-surface-muted);
+  background: var(--color-surface);
   color: var(--color-text-primary);
   font: inherit;
   font-size: var(--font-size-md);
@@ -642,11 +654,16 @@ code {
   color: var(--color-text-tertiary);
 }
 
+.todo-input__field:hover {
+  background: var(--color-surface-muted);
+  border-color: var(--color-text-tertiary);
+}
+
 .todo-input__field:focus {
   outline: none;
   background: var(--color-surface);
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
 }
 
 /* ── Priority picker ─────────────────────────────────────────── */
@@ -660,9 +677,9 @@ code {
   gap: var(--space-xs);
   padding: 0.625rem var(--space-md);
   min-width: 8.5rem;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
-  background: var(--color-surface-muted);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
   font: inherit;
   font-size: var(--font-size-sm);
@@ -673,14 +690,15 @@ code {
 }
 
 .todo-priority-picker__toggle:hover {
-  background: var(--color-border);
+  background: var(--color-surface-muted);
+  border-color: var(--color-text-tertiary);
   color: var(--color-text-primary);
 }
 
 .todo-priority-picker__toggle:focus-visible {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
 }
 
 .todo-priority-picker__dot {
@@ -807,9 +825,9 @@ code {
   gap: var(--space-xs);
   padding: 0.625rem var(--space-md);
   min-width: 10.5rem;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
-  background: var(--color-surface-muted);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
   font: inherit;
   font-size: var(--font-size-sm);
@@ -820,24 +838,25 @@ code {
 }
 
 .todo-input__date-btn:hover {
-  background: var(--color-border);
+  background: var(--color-surface-muted);
+  border-color: var(--color-text-tertiary);
   color: var(--color-text-primary);
 }
 
 .todo-input__date-btn:focus-visible {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
 }
 
 .todo-input__date-btn--active {
-  background: rgba(0, 113, 227, 0.08);
+  background: rgba(30, 58, 138, 0.08);
   color: var(--color-accent);
-  border-color: rgba(0, 113, 227, 0.2);
+  border-color: rgba(30, 58, 138, 0.2);
 }
 
 .todo-input__date-btn--active:hover {
-  background: rgba(0, 113, 227, 0.13);
+  background: rgba(30, 58, 138, 0.13);
   color: var(--color-accent);
 }
 
@@ -922,7 +941,7 @@ span.flatpickr-weekday {
 }
 
 .flatpickr-day.today:hover {
-  background: rgba(0, 113, 227, 0.08);
+  background: rgba(30, 58, 138, 0.08);
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
@@ -1047,7 +1066,7 @@ span.flatpickr-weekday {
   outline: none;
   background: var(--color-surface);
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
 }
 
 .todo-items__search-toggle {
@@ -1411,6 +1430,11 @@ span.flatpickr-weekday {
   padding: var(--space-lg);
 }
 
+@keyframes emptyStateFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .todo-item--empty-state {
   display: flex;
   flex-direction: column;
@@ -1423,6 +1447,7 @@ span.flatpickr-weekday {
   background: transparent !important;
   color: var(--color-text-tertiary);
   list-style: none;
+  animation: emptyStateFadeIn 0.2s ease both;
   pointer-events: none;
   box-shadow: none;
 }
