@@ -34,10 +34,18 @@ document.querySelector('#app').innerHTML = `
         placeholder="What needs to be done?"
         autocomplete="off"
       />
+      <input
+        class="todo-input__date"
+        id="todo-due-date"
+        type="date"
+        aria-label="Due date (optional)"
+      />
       <select class="todo-input__priority" id="todo-priority" name="priority" aria-label="Priority">
-        <option value="high">High priority</option>
-        <option value="medium" selected>Medium priority</option>
-        <option value="low">Low priority</option>
+        <option value="" selected>Priority</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+        <option value="trivial">Trivial</option>
       </select>
       <button class="todo-input__button" type="submit">Add</button>
     </form>
@@ -46,11 +54,31 @@ document.querySelector('#app').innerHTML = `
 
   <section class="todo-items" aria-label="Todo items">
     <div class="todo-items__toolbar">
-      <div class="todo-filter" id="todo-filter" role="group" aria-label="Filter by priority">
-        <button class="todo-filter__button todo-filter__button--active" data-filter="all">All</button>
-        <button class="todo-filter__button" data-filter="high">High</button>
-        <button class="todo-filter__button" data-filter="medium">Medium</button>
-        <button class="todo-filter__button" data-filter="low">Low</button>
+      <div class="todo-sort" id="todo-sort">
+        <button
+          class="todo-sort__toggle"
+          id="todo-sort-toggle"
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-label="Sort tasks"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M3 6h18"/>
+            <path d="M7 12h10"/>
+            <path d="M10 18h4"/>
+          </svg>
+        </button>
+        <div class="todo-sort__menu" id="todo-sort-menu" role="menu">
+          <button class="todo-sort__option todo-sort__option--active" data-sort="priority" role="menuitemradio" aria-checked="true" type="button">
+            <span class="todo-sort__option-label">Priority</span>
+            <svg class="todo-sort__check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          </button>
+          <button class="todo-sort__option" data-sort="due" role="menuitemradio" aria-checked="false" type="button">
+            <span class="todo-sort__option-label">Due date</span>
+            <svg class="todo-sort__check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          </button>
+        </div>
       </div>
       <div class="todo-search-wrapper">
         <div class="todo-search" id="todo-search-panel">
@@ -123,13 +151,16 @@ document.querySelector('#app').innerHTML = `
 const todoForm = document.querySelector('#todo-form')
 const todoInput = document.querySelector('#todo-input')
 const todoPrioritySelect = document.querySelector('#todo-priority')
+const todoDueDateInput = document.querySelector('#todo-due-date')
 const todoListCompleted = document.querySelector('#todo-list-completed')
 const todoCompletedSection = document.querySelector('#todo-completed-section')
 const todoCompletedCount = document.querySelector('#todo-completed-count')
 const todoSearchToggle = document.querySelector('#todo-search-toggle')
 const todoSearchPanel = document.querySelector('#todo-search-panel')
 const todoSearchInput = document.querySelector('#todo-search')
-const todoFilter = document.querySelector('#todo-filter')
+const todoSort = document.querySelector('#todo-sort')
+const todoSortToggle = document.querySelector('#todo-sort-toggle')
+const todoSortMenu = document.querySelector('#todo-sort-menu')
 const todoList = document.querySelector('#todo-list')
 const todoItemsSection = document.querySelector('.todo-items')
 const todoStatus = document.querySelector('#todo-status')
@@ -143,10 +174,23 @@ const openAuthModalButton = document.querySelector('#open-auth-modal')
 const continueGuestButton = document.querySelector('#continue-guest')
 const authLogoutButton = document.querySelector('#auth-logout')
 
-const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
+const PRIORITY_ORDER = { high: 0, medium: 1, low: 2, trivial: 3 }
+
+const comparePriority = (a, b) => {
+  const av = PRIORITY_ORDER[a.priority] ?? Infinity
+  const bv = PRIORITY_ORDER[b.priority] ?? Infinity
+  return av - bv
+}
+const compareDue = (a, b) => {
+  if (!a.due_date && !b.due_date) return 0
+  if (!a.due_date) return 1
+  if (!b.due_date) return -1
+  return a.due_date.localeCompare(b.due_date)
+}
 
 let todos = []
-let activeFilter = 'all'
+let activeSort = 'priority'
+let isSortOpen = false
 let searchQuery = ''
 let isSearchOpen = false
 let isLoading = true
@@ -229,8 +273,31 @@ const updateAuthUi = () => {
   authLogoutButton.hidden = false
 }
 
+const todayIsoDate = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const formatDueDate = (iso) => {
+  const today = todayIsoDate()
+  if (iso === today) return 'Today'
+  const [y, m, d] = iso.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowIso = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
+  if (iso === tomorrowIso) return 'Tomorrow'
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+const dueDateChip = (todo) => {
+  if (!todo.due_date) return ''
+  const overdue = !todo.completed && todo.due_date < todayIsoDate()
+  return `<span class="todo-item__due${overdue ? ' todo-item__due--overdue' : ''}">${formatDueDate(todo.due_date)}</span>`
+}
+
 const buildTodoItem = (todo) => `
-  <li class="todo-item todo-item--priority-${todo.priority} ${todo.completed ? 'todo-item--completed' : ''}">
+  <li class="todo-item ${todo.priority ? `todo-item--priority-${todo.priority}` : ''} ${todo.completed ? 'todo-item--completed' : ''}">
     <label class="todo-item__content">
       <input
         class="todo-item__checkbox"
@@ -240,6 +307,7 @@ const buildTodoItem = (todo) => `
         ${todo.completed ? 'checked' : ''}
       />
       <span class="todo-item__text">${escapeHtml(todo.text)}</span>
+      ${dueDateChip(todo)}
     </label>
     <button
       class="todo-item__delete"
@@ -266,12 +334,8 @@ const renderTodos = () => {
     return
   }
 
-  let visible = [...todos].sort(
-    (a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
-  )
-  if (activeFilter !== 'all') {
-    visible = visible.filter((t) => t.priority === activeFilter)
-  }
+  const sorter = activeSort === 'due' ? compareDue : comparePriority
+  let visible = [...todos].sort(sorter)
   if (searchQuery) {
     visible = visible.filter((t) => t.text.toLowerCase().includes(searchQuery))
   }
@@ -400,11 +464,12 @@ todoForm.addEventListener('submit', async (event) => {
     return
   }
 
-  const priority = todoPrioritySelect.value
+  const priority = todoPrioritySelect.value || null
+  const due_date = todoDueDateInput.value || null
 
   const { data, error } = await supabase
     .from('todos')
-    .insert({ text, priority, completed: false, user_id: currentUser.id })
+    .insert({ text, priority, due_date, completed: false, user_id: currentUser.id })
     .select()
     .single()
 
@@ -415,7 +480,8 @@ todoForm.addEventListener('submit', async (event) => {
 
   todos.unshift(data)
   todoInput.value = ''
-  todoPrioritySelect.value = 'medium'
+  todoPrioritySelect.value = ''
+  todoDueDateInput.value = ''
   todoInput.focus()
   setStatus('')
   renderTodos()
@@ -568,17 +634,37 @@ todoSearchInput.addEventListener('input', () => {
   renderTodos()
 })
 
-todoFilter.addEventListener('click', (event) => {
-  const target = event.target
-  if (!(target instanceof HTMLButtonElement)) return
-  const filter = target.dataset.filter
-  if (!filter) return
+const setSortOpen = (open) => {
+  isSortOpen = open
+  todoSort.classList.toggle('todo-sort--open', open)
+  todoSortToggle.setAttribute('aria-expanded', String(open))
+}
 
-  activeFilter = filter
-  todoFilter.querySelectorAll('.todo-filter__button').forEach((btn) => {
-    btn.classList.toggle('todo-filter__button--active', btn.dataset.filter === filter)
+todoSortToggle.addEventListener('click', (event) => {
+  event.stopPropagation()
+  setSortOpen(!isSortOpen)
+})
+
+todoSortMenu.addEventListener('click', (event) => {
+  const btn = event.target.closest('.todo-sort__option')
+  if (!btn) return
+  activeSort = btn.dataset.sort
+  todoSortMenu.querySelectorAll('.todo-sort__option').forEach((b) => {
+    const isActive = b === btn
+    b.classList.toggle('todo-sort__option--active', isActive)
+    b.setAttribute('aria-checked', String(isActive))
   })
+  setSortOpen(false)
   renderTodos()
+})
+
+document.addEventListener('click', (event) => {
+  if (!isSortOpen) return
+  if (!todoSort.contains(event.target)) setSortOpen(false)
+})
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && isSortOpen) setSortOpen(false)
 })
 
 supabase.auth.onAuthStateChange(async () => {
