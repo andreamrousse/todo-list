@@ -13,17 +13,23 @@ import {
 document.querySelector('#app').innerHTML = `
 <main class="todo-app">
   <header class="todo-app__header">
-    <h1 class="todo-app__title">Todo List</h1>
-    <p class="todo-app__subtitle" id="auth-description"></p>
+    <div class="todo-brand">
+      <div class="todo-brand__icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+          <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+          <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+          <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+        </svg>
+      </div>
+      <h1 class="todo-app__title">Taskly</h1>
+    </div>
     <div class="todo-app__auth-actions">
-      <button class="todo-app__auth-button" type="button" id="open-auth-modal">
-        Log in
-      </button>
-      <button class="todo-app__auth-button todo-app__auth-button--ghost" type="button" id="auth-logout">
-        Log out
-      </button>
+      <button class="todo-app__auth-button" type="button" id="open-auth-modal">Log in</button>
+      <button class="todo-app__auth-button todo-app__auth-button--ghost" type="button" id="auth-logout">Log out</button>
     </div>
   </header>
+  <p class="todo-app__subtitle" id="auth-description"></p>
 
   <section class="todo-input" aria-label="Add a new todo">
     <form class="todo-input__form" id="todo-form">
@@ -103,7 +109,7 @@ document.querySelector('#app').innerHTML = `
     <p class="todo-input__status" id="todo-status" aria-live="polite"></p>
   </section>
 
-  <section class="todo-items" aria-label="Todo items">
+  <section class="todo-items" aria-label="Todo items" hidden>
     <div class="todo-items__toolbar">
       <div class="todo-sort" id="todo-sort">
         <button
@@ -209,7 +215,15 @@ const todoInput = document.querySelector('#todo-input')
 
 const todoInputSingleLineHeight = todoInput.scrollHeight
 
+todoInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    todoForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+  }
+})
+
 todoInput.addEventListener('input', () => {
+  setStatus('')
   todoInput.style.height = 'auto'
   todoInput.style.height = todoInput.scrollHeight + 'px'
 
@@ -233,6 +247,7 @@ const todoDueDateWrap = document.querySelector('#todo-due-date-wrap')
 const todoDueDateBtn = document.querySelector('#todo-due-date-btn')
 const todoDueDateLabel = document.querySelector('#todo-due-date-label')
 const todoListCompleted = document.querySelector('#todo-list-completed')
+const todoItemsSection = document.querySelector('.todo-items')
 const todoPendingSection = document.querySelector('#todo-pending-section')
 const todoPendingCount = document.querySelector('#todo-pending-count')
 const todoCompletedSection = document.querySelector('#todo-completed-section')
@@ -244,7 +259,6 @@ const todoSort = document.querySelector('#todo-sort')
 const todoSortToggle = document.querySelector('#todo-sort-toggle')
 const todoSortMenu = document.querySelector('#todo-sort-menu')
 const todoList = document.querySelector('#todo-list')
-const todoItemsSection = document.querySelector('.todo-items')
 const todoStatus = document.querySelector('#todo-status')
 const authForm = document.querySelector('#auth-form')
 const authEmailInput = document.querySelector('#auth-email')
@@ -430,11 +444,19 @@ const duePicker = flatpickr(todoDueDateWrap, {
 
 const renderTodos = () => {
   if (isLoading) {
+    todoItemsSection.hidden = false
     todoList.innerHTML = '<li class="todo-item todo-item--empty">Loading todos...</li>'
     todoPendingSection.hidden = false
     todoCompletedSection.hidden = true
     return
   }
+
+  if (todos.length === 0) {
+    todoItemsSection.hidden = true
+    return
+  }
+
+  todoItemsSection.hidden = false
 
   const sorter = activeSort === 'due' ? compareDue : comparePriority
   let visible = [...todos].sort(sorter)
@@ -568,6 +590,7 @@ todoForm.addEventListener('submit', async (event) => {
 
   const text = todoInput.value.trim()
   if (!text) {
+    setStatus('Task cannot be empty.', 'error')
     todoInput.focus()
     return
   }
