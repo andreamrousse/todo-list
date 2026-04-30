@@ -17,8 +17,18 @@ This is a todo list app built with Vite + Vanilla JS and synced to Supabase.
 - Vite
 - Vanilla JS
 - Supabase (`@supabase/supabase-js`)
+- pnpm
 
-## Environment variables
+## Setup local development
+
+To get things set up on your local machine, do the following:
+
+1. Clone the repo
+2. Set up your local `.env` file
+3. Install dependencies with `pnpm install`
+4. Run the dev server with `pnpm dev`
+
+### Environment variables
 
 Create a `.env` file in the project root:
 
@@ -27,7 +37,14 @@ VITE_SUPABASE_URL=your-project-url
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-## Supabase CLI workflow (migration-first)
+### Run app locally
+
+```bash
+npm install
+npm run dev
+```
+
+### Supabase CLI workflow (migration-first)
 
 Use CLI migrations instead of dashboard-only SQL edits:
 
@@ -71,10 +88,3 @@ On first load, users see an auth modal with:
 
 If they continue as guest, they can still open auth later from the header button.
 When a guest signs up or logs in with email/password, guest todos are merged into the account (duplicates are skipped).
-
-## Run app
-
-```bash
-npm install
-npm run dev
-```
