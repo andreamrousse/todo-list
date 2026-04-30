@@ -32,6 +32,7 @@ document.querySelector('#app').innerHTML = `
   <p class="todo-app__subtitle" id="auth-description"></p>
 
   <section class="todo-input" aria-label="Add a new todo">
+    <h2 class="todo-section__title">Create task</h2>
     <form class="todo-input__form" id="todo-form">
       <div class="todo-input__group todo-input__group--field">
         <label class="todo-input__field-label" for="todo-input">Task</label>
@@ -104,13 +105,17 @@ document.querySelector('#app').innerHTML = `
           </div>
         </div>
       </div>
-      <button class="todo-input__button" type="submit">Add</button>
+      <button class="todo-input__button" type="submit">
+        Add
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
     </form>
     <p class="todo-input__status" id="todo-status" aria-live="polite"></p>
   </section>
 
   <section class="todo-items" aria-label="Todo items" hidden>
     <div class="todo-items__toolbar">
+      <h2 class="todo-section__title">My tasks</h2>
       <div class="todo-sort" id="todo-sort">
         <button
           class="todo-sort__toggle"
@@ -289,12 +294,16 @@ let activeSort = 'priority'
 let isSortOpen = false
 let isPriorityOpen = false
 let shouldAnimateAdd = false
+let highlightId = null
+let highlightDelay = 0
+let isAddHighlight = false
 let searchQuery = ''
 let isSearchOpen = false
 let isLoading = true
 let currentUser = null
 let isAnonymous = true
 let hasBootstrapped = false
+let hasEverHadTodos = false
 
 const escapeHtml = (value) =>
   value
@@ -452,7 +461,21 @@ const renderTodos = () => {
   }
 
   if (todos.length === 0) {
-    todoItemsSection.hidden = true
+    if (!hasEverHadTodos) {
+      todoItemsSection.hidden = true
+    } else {
+      todoItemsSection.hidden = false
+      todoPendingSection.hidden = false
+      todoPendingCount.textContent = '0'
+      todoList.innerHTML = `
+        <li class="todo-item todo-item--empty-state">
+          <img src="/empty-state.png" alt="" class="todo-item__empty-img" aria-hidden="true" />
+          <p class="todo-item__empty-title">All done!</p>
+          <p class="todo-item__empty-subtitle">You have no tasks. Enjoy your day.</p>
+        </li>`
+      todoCompletedSection.hidden = true
+      todoListCompleted.innerHTML = ''
+    }
     return
   }
 
@@ -474,9 +497,13 @@ const renderTodos = () => {
   shouldAnimateAdd = false
 
   if (active.length === 0) {
-    todoList.innerHTML = `<li class="todo-item todo-item--empty">${
-      searchQuery ? 'No todos match your search.' : 'No todos yet. Add your first task.'
-    }</li>`
+    todoList.innerHTML = searchQuery
+      ? `<li class="todo-item todo-item--empty">No todos match your search.</li>`
+      : `<li class="todo-item todo-item--empty-state">
+          <img src="/empty-state.png" alt="" class="todo-item__empty-img" aria-hidden="true" />
+          <p class="todo-item__empty-title">All done!</p>
+          <p class="todo-item__empty-subtitle">You have no tasks. Enjoy your day.</p>
+        </li>`
   } else {
     todoList.innerHTML = active.map(buildTodoItem).join('')
   }
@@ -488,6 +515,30 @@ const renderTodos = () => {
   } else {
     todoCompletedSection.hidden = true
     todoListCompleted.innerHTML = ''
+  }
+
+  if (highlightId) {
+    const id = highlightId
+    const delay = highlightDelay
+    const useAddAnim = isAddHighlight
+    highlightId = null
+    highlightDelay = 0
+    isAddHighlight = false
+    setTimeout(() => {
+      const li = todoItemsSection.querySelector(`[data-id="${id}"]`)?.closest('.todo-item')
+      if (li) {
+        const cls = useAddAnim ? 'todo-item--add-highlight' : 'todo-item--highlight'
+        const expectedAnim = useAddAnim ? 'todoAddHighlight' : 'todoHighlight'
+        li.classList.add(cls)
+        const onHighlightEnd = (e) => {
+          if (e.animationName === expectedAnim) {
+            li.classList.remove(cls)
+            li.removeEventListener('animationend', onHighlightEnd)
+          }
+        }
+        li.addEventListener('animationend', onHighlightEnd)
+      }
+    }, delay)
   }
 }
 
@@ -512,6 +563,7 @@ const loadTodos = async () => {
   }
 
   todos = data ?? []
+  if (todos.length > 0) hasEverHadTodos = true
   setStatus('')
   renderTodos()
 }
@@ -610,6 +662,7 @@ todoForm.addEventListener('submit', async (event) => {
   }
 
   todos.unshift(data)
+  hasEverHadTodos = true
   todoInput.value = ''
   todoInput.style.height = ''
   todoForm.classList.remove('todo-input__form--expanded')
@@ -617,7 +670,9 @@ todoForm.addEventListener('submit', async (event) => {
   duePicker.clear()
   todoInput.focus()
   setStatus('')
-  shouldAnimateAdd = true
+  highlightId = data.id
+  highlightDelay = 0
+  isAddHighlight = true
   renderTodos()
 })
 
@@ -729,12 +784,15 @@ todoItemsSection.addEventListener('click', async (event) => {
     }
 
     todos[index].completed = nextCompleted
+    highlightId = id
+    highlightDelay = 200
     setStatus('')
   }
 
   if (action === 'delete') {
     const li = target.closest('.todo-item')
     if (li) {
+      li.classList.remove('todo-item--highlight')
       li.classList.add('todo-item--removing')
       await new Promise((resolve) => setTimeout(resolve, 200))
     }
