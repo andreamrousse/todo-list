@@ -194,7 +194,7 @@ code {
 
 #app {
   width: 100%;
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -556,6 +556,15 @@ code {
   align-items: end;
 }
 
+.todo-input__form--expanded {
+  grid-template-columns: auto auto 1fr auto;
+  grid-template-areas:
+    'grp-field grp-field grp-field grp-field'
+    'grp-date  grp-priority  .  button';
+  row-gap: var(--space-md);
+  column-gap: var(--space-md);
+}
+
 @media (max-width: 540px) {
   .todo-input__form {
     grid-template-columns: 1fr 1fr;
@@ -572,7 +581,7 @@ code {
   gap: 0.25rem;
 }
 
-.todo-input__group--field    { grid-area: grp-field; }
+.todo-input__group--field    { grid-area: grp-field; min-width: 0; }
 .todo-input__group--date     { grid-area: grp-date; }
 .todo-input__group--priority { grid-area: grp-priority; }
 
@@ -594,6 +603,14 @@ code {
   color: var(--color-text-primary);
   font: inherit;
   font-size: var(--font-size-md);
+  line-height: 1.5;
+  min-height: 2.375rem;
+  resize: none;
+  overflow: hidden;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 
@@ -608,37 +625,144 @@ code {
   box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
 }
 
-.todo-input__priority {
-  appearance: none;
-  -webkit-appearance: none;
-  padding: 0.625rem var(--space-2xl) 0.625rem var(--space-md);
+/* ── Priority picker ─────────────────────────────────────────── */
+.todo-priority-picker {
+  position: relative;
+}
+
+.todo-priority-picker__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0.625rem var(--space-md);
+  min-width: 8.5rem;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background-color: var(--color-surface-muted);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236e6e73' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right var(--space-md) center;
-  color: var(--color-text-primary);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
   font: inherit;
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
-.todo-input__priority:hover {
-  background-color: var(--color-border);
+.todo-priority-picker__toggle:hover {
+  background: var(--color-border);
+  color: var(--color-text-primary);
 }
 
-.todo-input__priority:focus {
+.todo-priority-picker__toggle:focus-visible {
   outline: none;
-  background-color: var(--color-surface);
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
 }
 
-.todo-input__priority:has(option[value=""]:checked) {
+.todo-priority-picker__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.todo-priority-picker__dot[data-priority=""] { display: none; }
+.todo-priority-picker__dot[data-priority="high"]    { background: var(--color-danger); }
+.todo-priority-picker__dot[data-priority="medium"]  { background: var(--color-warning); }
+.todo-priority-picker__dot[data-priority="low"]     { background: var(--color-text-tertiary); }
+.todo-priority-picker__dot[data-priority="trivial"] { background: var(--color-border-strong); }
+
+.todo-priority-picker__label[data-placeholder="true"],
+.todo-priority-picker__label:not([data-placeholder]) {
   color: var(--color-text-tertiary);
+}
+
+.todo-priority-picker__label[data-placeholder="false"] {
+  color: var(--color-text-primary);
+}
+
+.todo-priority-picker__label {
+  flex: 1;
+  text-align: left;
+}
+
+.todo-priority-picker__chevron {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.todo-priority-picker--open .todo-priority-picker__chevron {
+  transform: rotate(180deg);
+}
+
+.todo-priority-picker__menu {
+  position: absolute;
+  top: calc(100% + var(--space-xs));
+  left: 0;
+  min-width: 160px;
+  padding: var(--space-xs);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  display: none;
+  z-index: 10;
+}
+
+.todo-priority-picker--open .todo-priority-picker__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todo-priority-picker__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 0.4375rem var(--space-sm);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.todo-priority-picker__option:hover {
+  background: var(--color-surface-muted);
+}
+
+.todo-priority-picker__option-text {
+  flex: 1;
+}
+
+.todo-priority-picker__option-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.todo-priority-picker__option-dot[data-priority=""]       { border: 1.5px dashed var(--color-border-strong); }
+.todo-priority-picker__option-dot[data-priority="high"]   { background: var(--color-danger); }
+.todo-priority-picker__option-dot[data-priority="medium"] { background: var(--color-warning); }
+.todo-priority-picker__option-dot[data-priority="low"]    { background: var(--color-text-tertiary); }
+.todo-priority-picker__option-dot[data-priority="trivial"]{ background: var(--color-border-strong); }
+
+.todo-priority-picker__check {
+  opacity: 0;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.todo-priority-picker__option--active .todo-priority-picker__check {
+  opacity: 1;
 }
 
 .todo-input__date-wrap {
@@ -658,6 +782,7 @@ code {
   align-items: center;
   gap: var(--space-xs);
   padding: 0.625rem var(--space-md);
+  min-width: 10.5rem;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: var(--color-surface-muted);
@@ -695,6 +820,8 @@ code {
 .todo-input__date-label {
   font-variant-numeric: tabular-nums;
   color: var(--color-text-tertiary);
+  flex: 1;
+  text-align: left;
 }
 
 .todo-input__date-btn--active .todo-input__date-label {
@@ -1169,8 +1296,7 @@ span.flatpickr-weekday {
 
 .todo-item__text {
   font-size: var(--font-size-md);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
 }
 
 .todo-item--completed .todo-item__text {

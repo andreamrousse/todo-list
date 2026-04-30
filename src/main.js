@@ -29,14 +29,14 @@ document.querySelector('#app').innerHTML = `
     <form class="todo-input__form" id="todo-form">
       <div class="todo-input__group todo-input__group--field">
         <label class="todo-input__field-label" for="todo-input">Task</label>
-        <input
+        <textarea
           class="todo-input__field"
           id="todo-input"
           name="todo"
-          type="text"
           placeholder="What needs to be done?"
           autocomplete="off"
-        />
+          rows="1"
+        ></textarea>
       </div>
       <div class="todo-input__group todo-input__group--date">
         <label class="todo-input__field-label" for="todo-due-date-btn">Due date</label>
@@ -60,14 +60,43 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       <div class="todo-input__group todo-input__group--priority">
-        <label class="todo-input__field-label" for="todo-priority">Priority</label>
-        <select class="todo-input__priority" id="todo-priority" name="priority" aria-label="Priority">
-          <option value="" selected>Priority</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-          <option value="trivial">Trivial</option>
-        </select>
+        <label class="todo-input__field-label" for="todo-priority-toggle">Priority</label>
+        <div class="todo-priority-picker" id="todo-priority-picker">
+          <input type="hidden" id="todo-priority" name="priority" value="" />
+          <button class="todo-priority-picker__toggle" id="todo-priority-toggle" type="button"
+                  aria-haspopup="listbox" aria-expanded="false" aria-label="Select priority">
+            <span class="todo-priority-picker__dot" id="todo-priority-dot" data-priority=""></span>
+            <span class="todo-priority-picker__label" id="todo-priority-label">None</span>
+            <svg class="todo-priority-picker__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="todo-priority-picker__menu" id="todo-priority-menu" role="listbox" aria-label="Priority">
+            <button class="todo-priority-picker__option todo-priority-picker__option--active" data-priority="" role="option" type="button">
+              <span class="todo-priority-picker__option-dot" data-priority=""></span>
+              <span class="todo-priority-picker__option-text">None</span>
+              <svg class="todo-priority-picker__check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            </button>
+            <button class="todo-priority-picker__option" data-priority="high" role="option" type="button">
+              <span class="todo-priority-picker__option-dot" data-priority="high"></span>
+              <span class="todo-priority-picker__option-text">High</span>
+              <svg class="todo-priority-picker__check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            </button>
+            <button class="todo-priority-picker__option" data-priority="medium" role="option" type="button">
+              <span class="todo-priority-picker__option-dot" data-priority="medium"></span>
+              <span class="todo-priority-picker__option-text">Medium</span>
+              <svg class="todo-priority-picker__check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            </button>
+            <button class="todo-priority-picker__option" data-priority="low" role="option" type="button">
+              <span class="todo-priority-picker__option-dot" data-priority="low"></span>
+              <span class="todo-priority-picker__option-text">Low</span>
+              <svg class="todo-priority-picker__check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            </button>
+            <button class="todo-priority-picker__option" data-priority="trivial" role="option" type="button">
+              <span class="todo-priority-picker__option-dot" data-priority="trivial"></span>
+              <span class="todo-priority-picker__option-text">Trivial</span>
+              <svg class="todo-priority-picker__check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
       <button class="todo-input__button" type="submit">Add</button>
     </form>
@@ -177,7 +206,28 @@ document.querySelector('#app').innerHTML = `
 
 const todoForm = document.querySelector('#todo-form')
 const todoInput = document.querySelector('#todo-input')
+
+const todoInputSingleLineHeight = todoInput.scrollHeight
+
+todoInput.addEventListener('input', () => {
+  todoInput.style.height = 'auto'
+  todoInput.style.height = todoInput.scrollHeight + 'px'
+
+  const isExpanded = todoForm.classList.contains('todo-input__form--expanded')
+  if (!isExpanded && todoInput.scrollHeight > todoInputSingleLineHeight) {
+    todoForm.classList.add('todo-input__form--expanded')
+  } else if (isExpanded && !todoInput.value) {
+    todoForm.classList.remove('todo-input__form--expanded')
+    todoInput.style.height = ''
+  }
+})
+
 const todoPrioritySelect = document.querySelector('#todo-priority')
+const todoPriorityPicker = document.querySelector('#todo-priority-picker')
+const todoPriorityToggle = document.querySelector('#todo-priority-toggle')
+const todoPriorityMenu = document.querySelector('#todo-priority-menu')
+const todoPriorityDot = document.querySelector('#todo-priority-dot')
+const todoPriorityLabel = document.querySelector('#todo-priority-label')
 const todoDueDateInput = document.querySelector('#todo-due-date')
 const todoDueDateWrap = document.querySelector('#todo-due-date-wrap')
 const todoDueDateBtn = document.querySelector('#todo-due-date-btn')
@@ -223,6 +273,7 @@ const compareDue = (a, b) => {
 let todos = []
 let activeSort = 'priority'
 let isSortOpen = false
+let isPriorityOpen = false
 let shouldAnimateAdd = false
 let searchQuery = ''
 let isSearchOpen = false
@@ -537,7 +588,9 @@ todoForm.addEventListener('submit', async (event) => {
 
   todos.unshift(data)
   todoInput.value = ''
-  todoPrioritySelect.value = ''
+  todoInput.style.height = ''
+  todoForm.classList.remove('todo-input__form--expanded')
+  setSelectedPriority('')
   duePicker.clear()
   todoInput.focus()
   setStatus('')
@@ -730,6 +783,45 @@ document.addEventListener('click', (event) => {
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && isSortOpen) setSortOpen(false)
+})
+
+const PRIORITY_LABELS = { '': 'None', high: 'High', medium: 'Medium', low: 'Low', trivial: 'Trivial' }
+
+const setSelectedPriority = (value) => {
+  todoPrioritySelect.value = value
+  todoPriorityDot.dataset.priority = value
+  todoPriorityLabel.textContent = PRIORITY_LABELS[value] ?? 'Priority'
+  todoPriorityLabel.dataset.placeholder = value === '' ? 'true' : 'false'
+  todoPriorityMenu.querySelectorAll('.todo-priority-picker__option').forEach((btn) => {
+    btn.classList.toggle('todo-priority-picker__option--active', btn.dataset.priority === value)
+  })
+}
+
+const setPriorityOpen = (open) => {
+  isPriorityOpen = open
+  todoPriorityPicker.classList.toggle('todo-priority-picker--open', open)
+  todoPriorityToggle.setAttribute('aria-expanded', String(open))
+}
+
+todoPriorityToggle.addEventListener('click', (event) => {
+  event.stopPropagation()
+  setPriorityOpen(!isPriorityOpen)
+})
+
+todoPriorityMenu.addEventListener('click', (event) => {
+  const btn = event.target.closest('.todo-priority-picker__option')
+  if (!btn) return
+  setSelectedPriority(btn.dataset.priority)
+  setPriorityOpen(false)
+})
+
+document.addEventListener('click', (event) => {
+  if (!isPriorityOpen) return
+  if (!todoPriorityPicker.contains(event.target)) setPriorityOpen(false)
+})
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && isPriorityOpen) setPriorityOpen(false)
 })
 
 supabase.auth.onAuthStateChange(async () => {
