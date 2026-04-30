@@ -105,7 +105,12 @@ document.querySelector('#app').innerHTML = `
         </button>
       </div>
     </div>
-    <ul class="todo-items__list" id="todo-list"></ul>
+    <details class="todo-pending-section" id="todo-pending-section" open hidden>
+      <summary class="todo-completed-section__summary">
+        Pending <span class="todo-completed-section__count" id="todo-pending-count">0</span>
+      </summary>
+      <ul class="todo-items__list" id="todo-list"></ul>
+    </details>
     <details class="todo-completed-section" id="todo-completed-section" open hidden>
       <summary class="todo-completed-section__summary">
         Completed <span class="todo-completed-section__count" id="todo-completed-count">0</span>
@@ -153,6 +158,8 @@ const todoInput = document.querySelector('#todo-input')
 const todoPrioritySelect = document.querySelector('#todo-priority')
 const todoDueDateInput = document.querySelector('#todo-due-date')
 const todoListCompleted = document.querySelector('#todo-list-completed')
+const todoPendingSection = document.querySelector('#todo-pending-section')
+const todoPendingCount = document.querySelector('#todo-pending-count')
 const todoCompletedSection = document.querySelector('#todo-completed-section')
 const todoCompletedCount = document.querySelector('#todo-completed-count')
 const todoSearchToggle = document.querySelector('#todo-search-toggle')
@@ -191,6 +198,7 @@ const compareDue = (a, b) => {
 let todos = []
 let activeSort = 'priority'
 let isSortOpen = false
+let shouldAnimateAdd = false
 let searchQuery = ''
 let isSearchOpen = false
 let isLoading = true
@@ -327,9 +335,12 @@ const buildTodoItem = (todo) => `
   </li>
 `
 
+todoDueDateInput.min = todayIsoDate()
+
 const renderTodos = () => {
   if (isLoading) {
     todoList.innerHTML = '<li class="todo-item todo-item--empty">Loading todos...</li>'
+    todoPendingSection.hidden = false
     todoCompletedSection.hidden = true
     return
   }
@@ -342,6 +353,12 @@ const renderTodos = () => {
 
   const active = visible.filter((t) => !t.completed)
   const done = visible.filter((t) => t.completed)
+
+  todoPendingSection.hidden = false
+  todoPendingCount.textContent = active.length
+
+  todoList.classList.toggle('todo-items__list--animate', shouldAnimateAdd)
+  shouldAnimateAdd = false
 
   if (active.length === 0) {
     todoList.innerHTML = `<li class="todo-item todo-item--empty">${
@@ -484,6 +501,7 @@ todoForm.addEventListener('submit', async (event) => {
   todoDueDateInput.value = ''
   todoInput.focus()
   setStatus('')
+  shouldAnimateAdd = true
   renderTodos()
 })
 
@@ -599,6 +617,12 @@ todoItemsSection.addEventListener('click', async (event) => {
   }
 
   if (action === 'delete') {
+    const li = target.closest('.todo-item')
+    if (li) {
+      li.classList.add('todo-item--removing')
+      await new Promise((resolve) => setTimeout(resolve, 200))
+    }
+
     const { error } = await supabase
       .from('todos')
       .delete()
@@ -606,6 +630,7 @@ todoItemsSection.addEventListener('click', async (event) => {
       .eq('user_id', currentUser.id)
 
     if (error) {
+      li?.classList.remove('todo-item--removing')
       setStatus(`Could not delete todo: ${error.message}`, 'error')
       return
     }
