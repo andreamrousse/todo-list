@@ -130,6 +130,7 @@ document.querySelector('#app').innerHTML = `
             <path d="M7 12h10"/>
             <path d="M10 18h4"/>
           </svg>
+          <span class="todo-toolbar-btn__label">Sort</span>
         </button>
         <div class="todo-sort__menu" id="todo-sort-menu" role="menu">
           <button class="todo-sort__option todo-sort__option--active" data-sort="priority" role="menuitemradio" aria-checked="true" type="button">
@@ -164,17 +165,22 @@ document.querySelector('#app').innerHTML = `
             <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/>
             <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
+          <span class="todo-toolbar-btn__label">Search</span>
         </button>
       </div>
     </div>
     <details class="todo-pending-section" id="todo-pending-section" open hidden>
       <summary class="todo-completed-section__summary">
+        <svg class="todo-section-chevron todo-section-chevron--down" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        <svg class="todo-section-chevron todo-section-chevron--up" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 15l-6-6-6 6"/></svg>
         Pending <span class="todo-completed-section__count" id="todo-pending-count">0</span>
       </summary>
       <ul class="todo-items__list" id="todo-list"></ul>
     </details>
     <details class="todo-completed-section" id="todo-completed-section" open hidden>
       <summary class="todo-completed-section__summary">
+        <svg class="todo-section-chevron todo-section-chevron--down" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        <svg class="todo-section-chevron todo-section-chevron--up" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 15l-6-6-6 6"/></svg>
         Completed <span class="todo-completed-section__count" id="todo-completed-count">0</span>
       </summary>
       <ul class="todo-items__list todo-items__list--completed" id="todo-list-completed"></ul>
