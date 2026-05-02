@@ -206,36 +206,50 @@ document.querySelector('#app').innerHTML = `
     <button class="auth-modal__close" id="auth-modal-close" type="button" aria-label="Close">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
     </button>
-    <h2 class="auth-modal__title" id="auth-modal-title">Welcome</h2>
-    <p class="auth-modal__description">Log in or create an account. You can also continue as a guest.</p>
-    <form class="auth-modal__form" id="auth-form">
-      <label class="auth-modal__label" for="auth-email">Email</label>
-      <input
-        class="auth-modal__field"
-        id="auth-email"
-        name="email"
-        type="email"
-        autocomplete="email"
-        placeholder="you@example.com"
-      />
-      <label class="auth-modal__label" for="auth-password">Password</label>
-      <input
-        class="auth-modal__field"
-        id="auth-password"
-        name="password"
-        type="password"
-        autocomplete="current-password"
-        placeholder="Enter your password"
-      />
-      <div class="auth-modal__actions">
-        <button class="auth-modal__button auth-modal__button--primary" type="submit" data-auth-action="login">
-          Log in
-        </button>
-        <button class="auth-modal__button auth-modal__button--secondary" type="submit" data-auth-action="signup">
-          Create account
-        </button>
+    <div class="auth-modal__header">
+      <div class="todo-brand__icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+          <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+          <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+          <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+        </svg>
       </div>
+      <h2 class="auth-modal__title" id="auth-modal-title">Welcome to Taskly</h2>
+      <p class="auth-modal__description">Sign in or create an account to keep your tasks in sync.</p>
+    </div>
+    <div class="auth-modal__tabs" role="tablist" id="auth-tabs">
+      <button class="auth-modal__tab auth-modal__tab--active" type="button" data-tab="login" role="tab" aria-selected="true">Log in</button>
+      <button class="auth-modal__tab" type="button" data-tab="signup" role="tab" aria-selected="false">Create account</button>
+    </div>
+    <form class="auth-modal__form" id="auth-form">
+      <div class="auth-modal__field-group">
+        <label class="auth-modal__label" for="auth-email">Email</label>
+        <input
+          class="auth-modal__field"
+          id="auth-email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          placeholder="you@example.com"
+        />
+      </div>
+      <div class="auth-modal__field-group">
+        <label class="auth-modal__label" for="auth-password">Password</label>
+        <input
+          class="auth-modal__field"
+          id="auth-password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Enter your password"
+        />
+      </div>
+      <button class="auth-modal__button auth-modal__button--primary" type="submit" id="auth-submit" data-auth-action="login">
+        Log in
+      </button>
     </form>
+    <div class="auth-modal__divider" aria-hidden="true"><span>or</span></div>
     <button class="auth-modal__button auth-modal__button--ghost" type="button" id="continue-guest">
       Continue as guest
     </button>
@@ -300,6 +314,8 @@ const authPasswordInput = document.querySelector('#auth-password')
 const authStatus = document.querySelector('#auth-status')
 const authDescription = document.querySelector('#auth-description')
 const authModal = document.querySelector('#auth-modal')
+const authTabs = document.querySelector('#auth-tabs')
+const authSubmitBtn = document.querySelector('#auth-submit')
 const openAuthModalButton = document.querySelector('#open-auth-modal')
 const continueGuestButton = document.querySelector('#continue-guest')
 const authLogoutButton = document.querySelector('#auth-logout')
@@ -752,6 +768,20 @@ todoForm.addEventListener('submit', async (event) => {
   highlightDelay = 0
   isAddHighlight = true
   renderTodos()
+})
+
+authTabs.addEventListener('click', (e) => {
+  const tab = e.target.closest('[data-tab]')
+  if (!tab) return
+  const action = tab.dataset.tab
+  authTabs.querySelectorAll('[data-tab]').forEach((t) => {
+    const active = t.dataset.tab === action
+    t.classList.toggle('auth-modal__tab--active', active)
+    t.setAttribute('aria-selected', String(active))
+  })
+  authSubmitBtn.dataset.authAction = action
+  authSubmitBtn.textContent = action === 'login' ? 'Log in' : 'Create account'
+  setAuthStatus('')
 })
 
 authForm.addEventListener('submit', async (event) => {
