@@ -56,8 +56,8 @@ document.querySelector('#app').innerHTML = `
           autocomplete="off"
           rows="1"
         ></textarea>
-        <p class="todo-input__status" id="todo-status" aria-live="polite"></p>
       </div>
+      <p class="todo-input__status" id="todo-status" aria-live="polite"></p>
       <div class="todo-input__group todo-input__group--date">
         <label class="todo-input__field-label" for="todo-due-date-btn">Due date</label>
         <div class="todo-input__date-wrap" id="todo-due-date-wrap">
@@ -309,6 +309,7 @@ const userMenuToggle = document.querySelector('#user-menu-toggle')
 const userMenuDropdown = document.querySelector('#user-menu-dropdown')
 const userMenuInitial = document.querySelector('#user-menu-initial')
 const userMenuEmail = document.querySelector('#user-menu-email')
+const snackbarContainer = document.querySelector('#snackbar-container')
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2, trivial: 3 }
 
@@ -339,6 +340,7 @@ let currentUser = null
 let isAnonymous = true
 let hasBootstrapped = false
 let hasEverHadTodos = false
+const pendingDeletes = new Map()
 
 const escapeHtml = (value) =>
   value
@@ -361,6 +363,29 @@ const setStatus = (message = '', type = '') => {
   }
 }
 
+const removeSnackbar = (el) => {
+  if (!el || !el.parentNode) return
+  el.classList.add('snackbar--hiding')
+  el.addEventListener('animationend', () => el.remove(), { once: true })
+}
+
+const createSnackbar = (message, onUndo) => {
+  const el = document.createElement('div')
+  el.className = 'snackbar'
+  el.setAttribute('role', 'status')
+  const msgSpan = document.createElement('span')
+  msgSpan.className = 'snackbar__message'
+  msgSpan.textContent = message
+  const undoBtn = document.createElement('button')
+  undoBtn.className = 'snackbar__undo'
+  undoBtn.type = 'button'
+  undoBtn.textContent = 'Undo'
+  undoBtn.addEventListener('click', onUndo)
+  el.appendChild(msgSpan)
+  el.appendChild(undoBtn)
+  snackbarContainer.appendChild(el)
+  return el
+}
 
 const setAuthStatus = (message = '', type = '') => {
   authStatus.textContent = message
@@ -873,6 +898,9 @@ todoItemsSection.addEventListener('click', async (event) => {
   }
 
   if (action === 'delete') {
+    const deletedTodo = todos[index]
+
+    // Animate the row out
     const li = target.closest('.todo-item')
     if (li) {
       li.classList.remove('todo-item--highlight')
@@ -880,19 +908,46 @@ todoItemsSection.addEventListener('click', async (event) => {
       await new Promise((resolve) => setTimeout(resolve, 200))
     }
 
-    const { error } = await supabase
-      .from('todos')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', currentUser.id)
-
-    if (error) {
-      li?.classList.remove('todo-item--removing')
-      setStatus(`Could not delete todo: ${error.message}`, 'error')
-      return
-    }
-
+    // Optimistically remove from state
     todos.splice(index, 1)
+    renderTodos()
+
+    // Truncate long task names for the snackbar label
+    const label = deletedTodo.text.length > 32
+      ? deletedTodo.text.slice(0, 32) + '\u2026'
+      : deletedTodo.text
+
+    const entry = { todo: deletedTodo, timerId: null, el: null }
+    pendingDeletes.set(deletedTodo.id, entry)
+
+    entry.el = createSnackbar(`"${label}" deleted`, () => {
+      const e = pendingDeletes.get(deletedTodo.id)
+      if (!e) return
+      clearTimeout(e.timerId)
+      pendingDeletes.delete(deletedTodo.id)
+      todos.push(deletedTodo)
+      renderTodos()
+      removeSnackbar(e.el)
+    })
+
+    entry.timerId = setTimeout(async () => {
+      pendingDeletes.delete(deletedTodo.id)
+      removeSnackbar(entry.el)
+
+      const { error } = await supabase
+        .from('todos')
+        .delete()
+        .eq('id', deletedTodo.id)
+        .eq('user_id', currentUser.id)
+
+      if (error) {
+        todos.push(deletedTodo)
+        renderTodos()
+        setStatus(`Could not delete task: ${error.message}`, 'error')
+      }
+    }, 5000)
+
+    return
   }
 
   renderTodos()
