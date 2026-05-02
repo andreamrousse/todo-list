@@ -1136,7 +1136,20 @@ document.addEventListener('click', (event) => {
 })
 
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && isPriorityOpen) setPriorityOpen(false)
+  if (event.key === 'Escape' && isPriorityOpen) {
+    setPriorityOpen(false)
+    return
+  }
+  if (isPriorityOpen && event.key.length === 1 && /[a-z]/i.test(event.key)) {
+    const key = event.key.toLowerCase()
+    const match = [...todoPriorityMenu.querySelectorAll('.todo-priority-picker__option')].find(
+      (btn) => (btn.dataset.priority || 'none').startsWith(key)
+    )
+    if (match) {
+      setSelectedPriority(match.dataset.priority)
+      setPriorityOpen(false)
+    }
+  }
 })
 
 supabase.auth.onAuthStateChange(async (event) => {
