@@ -245,12 +245,23 @@ document.querySelector('#app').innerHTML = `
           placeholder="Enter your password"
         />
       </div>
+      <div class="auth-modal__field-group" id="auth-confirm-group" hidden>
+        <label class="auth-modal__label" for="auth-confirm-password">Confirm Password</label>
+        <input
+          class="auth-modal__field"
+          id="auth-confirm-password"
+          name="confirm-password"
+          type="password"
+          autocomplete="new-password"
+          placeholder="Re-enter your password"
+        />
+      </div>
       <button class="auth-modal__button auth-modal__button--primary" type="submit" id="auth-submit" data-auth-action="login">
         Log in
       </button>
     </form>
     <div class="auth-modal__divider" aria-hidden="true"><span>or</span></div>
-    <button class="auth-modal__button auth-modal__button--ghost" type="button" id="continue-guest">
+    <button class="auth-modal__button auth-modal__button--secondary" type="button" id="continue-guest">
       Continue as guest
     </button>
     <p class="auth-modal__status" id="auth-status" aria-live="polite"></p>
@@ -316,6 +327,8 @@ const authDescription = document.querySelector('#auth-description')
 const authModal = document.querySelector('#auth-modal')
 const authTabs = document.querySelector('#auth-tabs')
 const authSubmitBtn = document.querySelector('#auth-submit')
+const authConfirmGroup = document.querySelector('#auth-confirm-group')
+const authConfirmInput = document.querySelector('#auth-confirm-password')
 const openAuthModalButton = document.querySelector('#open-auth-modal')
 const continueGuestButton = document.querySelector('#continue-guest')
 const authLogoutButton = document.querySelector('#auth-logout')
@@ -428,6 +441,7 @@ const openAuthModal = (options = {}) => {
 
 const closeAuthModal = () => {
   authModal.classList.remove('auth-modal--open')
+  authConfirmInput.value = ''
 }
 
 const authActionsEl = document.querySelector('.todo-app__auth-actions')
@@ -779,8 +793,14 @@ authTabs.addEventListener('click', (e) => {
     t.classList.toggle('auth-modal__tab--active', active)
     t.setAttribute('aria-selected', String(active))
   })
+  const isSignup = action === 'signup'
+  authConfirmGroup.hidden = !isSignup
+  authPasswordInput.autocomplete = isSignup ? 'new-password' : 'current-password'
   authSubmitBtn.dataset.authAction = action
-  authSubmitBtn.textContent = action === 'login' ? 'Log in' : 'Create account'
+  authSubmitBtn.textContent = isSignup ? 'Create account' : 'Log in'
+  authConfirmInput.value = ''
+  authEmailInput.value = ''
+  authPasswordInput.value = ''
   setAuthStatus('')
 })
 
@@ -808,6 +828,11 @@ authForm.addEventListener('submit', async (event) => {
     return
   }
 
+  if (authAction === 'signup' && password !== authConfirmInput.value) {
+    setAuthStatus('Passwords do not match.', 'error')
+    return
+  }
+
   const startedAsAnonymous = isAnonymous
   let anonymousTodos = []
 
@@ -827,7 +852,11 @@ authForm.addEventListener('submit', async (event) => {
     await refreshAuthState()
 
     if (!currentUser || isAnonymous) {
-      setAuthStatus('Check your credentials and try again.', 'error')
+      if (authAction === 'signup') {
+        setAuthStatus('Check your email to confirm your account.', 'success')
+      } else {
+        setAuthStatus('Check your credentials and try again.', 'error')
+      }
       return
     }
 
@@ -839,7 +868,12 @@ authForm.addEventListener('submit', async (event) => {
     closeAuthModal()
     setAuthStatus('Account connected and todos merged.', 'success')
   } catch (error) {
-    setAuthStatus(`Could not complete auth: ${error.message}`, 'error')
+    const msg = error?.message ?? ''
+    if (msg.toLowerCase().includes('rate limit')) {
+      setAuthStatus('Too many attempts — please wait a moment and try again.', 'error')
+    } else {
+      setAuthStatus(`Could not complete auth: ${msg}`, 'error')
+    }
   } finally {
     updateAuthUi()
   }

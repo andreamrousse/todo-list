@@ -751,7 +751,7 @@ code {
 }
 
 .auth-modal__status--success {
-  color: var(--color-success);
+  color: #1a7f3c;
 }
 
 .todo-section__title {
