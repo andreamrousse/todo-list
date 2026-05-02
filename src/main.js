@@ -540,7 +540,12 @@ const duePicker = flatpickr(todoDueDateWrap, {
   disableMobile: true,
   dateFormat: 'Y-m-d',
   minDate: 'today',
+  maxDate: new Date(new Date().getFullYear() + 100, 11, 31),
   monthSelectorType: 'static',
+  onReady(_selectedDates, _dateStr, instance) {
+    const yearInput = instance.yearElements[0]
+    yearInput.addEventListener('keydown', (e) => e.preventDefault())
+  },
   onChange(selectedDates) {
     if (selectedDates.length > 0) {
       todoDueDateLabel.textContent = formatDueDate(duePicker.formatDate(selectedDates[0], 'Y-m-d'))
