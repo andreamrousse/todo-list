@@ -24,9 +24,21 @@ document.querySelector('#app').innerHTML = `
       </div>
       <h1 class="todo-app__title">Taskly</h1>
     </div>
-    <div class="todo-app__auth-actions">
-      <button class="todo-app__auth-button" type="button" id="open-auth-modal">Log in</button>
-      <button class="todo-app__auth-button todo-app__auth-button--ghost" type="button" id="auth-logout">Log out</button>
+    <div class="todo-app__auth-actions" data-auth-hidden>
+      <button class="todo-app__auth-button" type="button" id="open-auth-modal" hidden>Log in</button>
+      <div class="user-menu" id="user-menu" hidden>
+        <button class="user-menu__avatar" id="user-menu-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+          <span class="user-menu__initial" id="user-menu-initial"></span>
+        </button>
+        <div class="user-menu__dropdown" id="user-menu-dropdown" role="menu">
+          <p class="user-menu__email" id="user-menu-email"></p>
+          <hr class="user-menu__divider" />
+          <button class="user-menu__logout" type="button" id="auth-logout" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Log out
+          </button>
+        </div>
+      </div>
     </div>
   </header>
   <p class="todo-app__subtitle" id="auth-description"></p>
@@ -44,6 +56,7 @@ document.querySelector('#app').innerHTML = `
           autocomplete="off"
           rows="1"
         ></textarea>
+        <p class="todo-input__status" id="todo-status" aria-live="polite"></p>
       </div>
       <div class="todo-input__group todo-input__group--date">
         <label class="todo-input__field-label" for="todo-due-date-btn">Due date</label>
@@ -110,7 +123,6 @@ document.querySelector('#app').innerHTML = `
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
     </form>
-    <p class="todo-input__status" id="todo-status" aria-live="polite"></p>
   </section>
 
   <section class="todo-items" aria-label="Todo items" hidden>
@@ -191,11 +203,21 @@ document.querySelector('#app').innerHTML = `
 <section class="auth-modal" id="auth-modal" aria-label="Authentication">
   <div class="auth-modal__backdrop"></div>
   <div class="auth-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <button class="auth-modal__close" id="auth-modal-close" type="button" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
     <h2 class="auth-modal__title" id="auth-modal-title">Welcome</h2>
     <p class="auth-modal__description">Log in or create an account. You can also continue as a guest.</p>
     <form class="auth-modal__form" id="auth-form">
       <label class="auth-modal__label" for="auth-email">Email</label>
-      <input class="auth-modal__field" id="auth-email" name="email" type="email" autocomplete="email" />
+      <input
+        class="auth-modal__field"
+        id="auth-email"
+        name="email"
+        type="email"
+        autocomplete="email"
+        placeholder="you@example.com"
+      />
       <label class="auth-modal__label" for="auth-password">Password</label>
       <input
         class="auth-modal__field"
@@ -203,6 +225,7 @@ document.querySelector('#app').innerHTML = `
         name="password"
         type="password"
         autocomplete="current-password"
+        placeholder="Enter your password"
       />
       <div class="auth-modal__actions">
         <button class="auth-modal__button auth-modal__button--primary" type="submit" data-auth-action="login">
@@ -280,6 +303,12 @@ const authModal = document.querySelector('#auth-modal')
 const openAuthModalButton = document.querySelector('#open-auth-modal')
 const continueGuestButton = document.querySelector('#continue-guest')
 const authLogoutButton = document.querySelector('#auth-logout')
+const authModalCloseButton = document.querySelector('#auth-modal-close')
+const userMenu = document.querySelector('#user-menu')
+const userMenuToggle = document.querySelector('#user-menu-toggle')
+const userMenuDropdown = document.querySelector('#user-menu-dropdown')
+const userMenuInitial = document.querySelector('#user-menu-initial')
+const userMenuEmail = document.querySelector('#user-menu-email')
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2, trivial: 3 }
 
@@ -360,13 +389,16 @@ const closeAuthModal = () => {
   authModal.classList.remove('auth-modal--open')
 }
 
+const authActionsEl = document.querySelector('.todo-app__auth-actions')
+
 const updateAuthUi = () => {
   if (!currentUser) {
     authDescription.textContent = ''
     authEmailInput.disabled = true
     authPasswordInput.disabled = true
     openAuthModalButton.hidden = true
-    authLogoutButton.hidden = true
+    userMenu.hidden = true
+    authActionsEl?.removeAttribute('data-auth-hidden')
     return
   }
 
@@ -375,15 +407,20 @@ const updateAuthUi = () => {
     authEmailInput.disabled = false
     authPasswordInput.disabled = false
     openAuthModalButton.hidden = false
-    authLogoutButton.hidden = true
+    userMenu.hidden = true
+    authActionsEl?.removeAttribute('data-auth-hidden')
     return
   }
 
-  authDescription.textContent = `Logged in as ${currentUser.email ?? 'your account'}.`
+  authDescription.textContent = ''
   authEmailInput.disabled = true
   authPasswordInput.disabled = true
   openAuthModalButton.hidden = true
-  authLogoutButton.hidden = false
+  userMenu.hidden = false
+  const email = currentUser.email ?? ''
+  userMenuInitial.textContent = email.charAt(0).toUpperCase()
+  userMenuEmail.textContent = email
+  authActionsEl?.removeAttribute('data-auth-hidden')
 }
 
 const todayIsoDate = () => {
@@ -473,12 +510,14 @@ const renderTodos = () => {
       todoItemsSection.hidden = false
       todoPendingSection.hidden = false
       todoPendingCount.textContent = '0'
-      todoList.innerHTML = `
-        <li class="todo-item todo-item--empty-state">
-          <img src="/empty-state.png" alt="" class="todo-item__empty-img" aria-hidden="true" />
-          <p class="todo-item__empty-title">All done!</p>
-          <p class="todo-item__empty-subtitle">You have no tasks. Enjoy your day.</p>
-        </li>`
+      if (!todoList.querySelector('.todo-item--empty-state')) {
+        todoList.innerHTML = `
+          <li class="todo-item todo-item--empty-state">
+            <img src="/empty-state.png" alt="" class="todo-item__empty-img" aria-hidden="true" />
+            <p class="todo-item__empty-title">All done!</p>
+            <p class="todo-item__empty-subtitle">You have no tasks. Enjoy your day.</p>
+          </li>`
+      }
       todoCompletedSection.hidden = true
       todoListCompleted.innerHTML = ''
     }
@@ -503,13 +542,21 @@ const renderTodos = () => {
   shouldAnimateAdd = false
 
   if (active.length === 0) {
-    todoList.innerHTML = searchQuery
-      ? `<li class="todo-item todo-item--empty">No todos match your search.</li>`
-      : `<li class="todo-item todo-item--empty-state">
-          <img src="/empty-state.png" alt="" class="todo-item__empty-img" aria-hidden="true" />
-          <p class="todo-item__empty-title">All done!</p>
-          <p class="todo-item__empty-subtitle">You have no tasks. Enjoy your day.</p>
-        </li>`
+    const emptyType = searchQuery ? 'search' : 'all-done'
+    const existingEmpty = todoList.querySelector('.todo-item--empty-state')
+    if (!existingEmpty || existingEmpty.dataset.emptyType !== emptyType) {
+      todoList.innerHTML = searchQuery
+        ? `<li class="todo-item todo-item--empty-state" data-empty-type="search">
+            <img src="/empty-search.png" alt="" class="todo-item__empty-img" aria-hidden="true" />
+            <p class="todo-item__empty-title">No results found</p>
+            <p class="todo-item__empty-subtitle">No tasks match your search. Try a different keyword.</p>
+          </li>`
+        : `<li class="todo-item todo-item--empty-state" data-empty-type="all-done">
+            <img src="/empty-state.png" alt="" class="todo-item__empty-img" aria-hidden="true" />
+            <p class="todo-item__empty-title">All done!</p>
+            <p class="todo-item__empty-subtitle">You have no tasks. Enjoy your day.</p>
+          </li>`
+    }
   } else {
     todoList.innerHTML = active.map(buildTodoItem).join('')
   }
@@ -752,17 +799,47 @@ openAuthModalButton.addEventListener('click', () => {
   openAuthModal({ clearStatus: true })
 })
 
+authModalCloseButton.addEventListener('click', () => {
+  closeAuthModal()
+})
+
 authLogoutButton.addEventListener('click', async () => {
+  setUserMenuOpen(false)
   try {
     await signOut()
-    await ensureSession()
-    await refreshAuthState()
-    await loadTodos()
-  } catch (error) {
-    setAuthStatus(`Could not sign out: ${error.message}`, 'error')
+  } catch {
+    // local session is already cleared by Supabase even if the server call fails
   } finally {
+    try {
+      await ensureSession()
+      await refreshAuthState()
+      await loadTodos()
+    } catch (cleanupError) {
+      setAuthStatus(`Could not sign out: ${cleanupError.message}`, 'error')
+    }
     updateAuthUi()
   }
+})
+
+let isUserMenuOpen = false
+
+const setUserMenuOpen = (open) => {
+  isUserMenuOpen = open
+  userMenuDropdown.classList.toggle('user-menu__dropdown--open', open)
+  userMenuToggle.setAttribute('aria-expanded', String(open))
+}
+
+userMenuToggle.addEventListener('click', (e) => {
+  e.stopPropagation()
+  setUserMenuOpen(!isUserMenuOpen)
+})
+
+document.addEventListener('click', (e) => {
+  if (isUserMenuOpen && !userMenu.contains(e.target)) setUserMenuOpen(false)
+})
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isUserMenuOpen) setUserMenuOpen(false)
 })
 
 todoItemsSection.addEventListener('click', async (event) => {
@@ -911,8 +988,12 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && isPriorityOpen) setPriorityOpen(false)
 })
 
-supabase.auth.onAuthStateChange(async () => {
+supabase.auth.onAuthStateChange(async (event) => {
   if (!hasBootstrapped) {
+    return
+  }
+
+  if (event === 'SIGNED_OUT') {
     return
   }
 
@@ -921,6 +1002,12 @@ supabase.auth.onAuthStateChange(async () => {
     await loadTodos()
   } catch (error) {
     setAuthStatus(`Could not refresh auth state: ${error.message}`, 'error')
+  }
+})
+
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) {
+    refreshAuthState().catch(() => {})
   }
 })
 

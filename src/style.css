@@ -1,3 +1,9 @@
+/* Ensure [hidden] always wins regardless of specificity */
+[hidden] { display: none !important; }
+
+/* Hide auth area until updateAuthUi() has run and set the correct button state */
+[data-auth-hidden] { visibility: hidden !important; }
+
 :root {
   /* Colors */
   --color-bg: #f0f3fa;
@@ -377,6 +383,10 @@ code {
   margin: 0 0 var(--space-sm);
 }
 
+.todo-app__subtitle:empty {
+  display: none;
+}
+
 .todo-app__auth-actions {
   display: flex;
   align-items: center;
@@ -412,6 +422,94 @@ code {
   color: var(--color-text-primary);
 }
 
+/* ── User menu (avatar + dropdown) ──────────────────────────── */
+.user-menu {
+  position: relative;
+}
+
+.user-menu__avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.user-menu__avatar:hover {
+  opacity: 0.85;
+}
+
+.user-menu__initial {
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.user-menu__dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 14rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-sm);
+  z-index: 40;
+}
+
+.user-menu__dropdown--open {
+  display: block;
+}
+
+.user-menu__email {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  padding: var(--space-xs) var(--space-sm);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-menu__divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-xs) 0;
+}
+
+.user-menu__logout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-danger);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.user-menu__logout:hover {
+  background: rgba(255, 59, 48, 0.08);
+}
+
 .auth-modal {
   position: fixed;
   inset: 0;
@@ -444,6 +542,29 @@ code {
   gap: var(--space-md);
 }
 
+.auth-modal__close {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.auth-modal__close:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
 .auth-modal__title {
   margin: 0;
   font-size: var(--font-size-lg);
@@ -474,6 +595,10 @@ code {
   font: inherit;
   font-size: var(--font-size-md);
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.auth-modal__field::placeholder {
+  color: var(--color-text-tertiary);
 }
 
 .auth-modal__field:hover {
@@ -996,7 +1121,8 @@ span.flatpickr-weekday {
 }
 
 .todo-input__status {
-  margin: var(--space-sm) 0 0;
+  margin: 0;
+  padding-left: var(--space-sm);
   font-size: var(--font-size-sm);
   min-height: 0;
 }
@@ -1038,24 +1164,28 @@ span.flatpickr-weekday {
 .todo-search {
   overflow: hidden;
   max-width: 0;
-  transition: max-width 0.25s ease;
+  opacity: 0;
+  pointer-events: none;
+  transition: max-width 0.25s ease, opacity 0.2s ease;
 }
 
 .todo-search--open {
-  max-width: 240px;
+  max-width: 260px;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .todo-search__input {
-  width: 200px;
+  width: 220px;
   padding: 0.375rem var(--space-md);
-  border: 1px solid transparent;
+  border: 1.5px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
-  background: var(--color-surface-muted);
+  background: var(--color-surface);
   color: var(--color-text-primary);
   font: inherit;
   font-size: var(--font-size-sm);
   box-sizing: border-box;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s;
 }
 
 .todo-search__input::placeholder {
@@ -1064,9 +1194,11 @@ span.flatpickr-weekday {
 
 .todo-search__input:focus {
   outline: none;
-  background: var(--color-surface);
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+}
+
+.todo-search__input:hover {
+  border-color: var(--color-text-tertiary);
 }
 
 .todo-items__search-toggle {
@@ -1306,24 +1438,21 @@ details[open] .todo-section-chevron--up {
 }
 
 @keyframes todoHighlight {
-  0%   { background: var(--color-surface); }
-  20%  { background: var(--color-surface-muted); }
-  100% { background: var(--color-surface); }
+  30% { background: #e0eaff; }
 }
 
 .todo-item--highlight {
-  animation: todoHighlight 3s ease forwards;
+  animation: todoHighlight 0.5s ease-out;
 }
 
 @keyframes todoAddHighlight {
-  0%   { opacity: 0; transform: translateY(-4px); background: var(--color-surface); }
-  6.7% { opacity: 1; transform: translateY(0); }
-  20%  { background: var(--color-surface-muted); }
-  100% { opacity: 1; transform: translateY(0); background: var(--color-surface); }
+  0%  { opacity: 0; transform: translateY(-4px); }
+  20% { opacity: 1; transform: translateY(0); background: #e0eaff; }
+  50% { background: #e0eaff; }
 }
 
 .todo-item--add-highlight {
-  animation: todoAddHighlight 3s ease forwards;
+  animation: todoAddHighlight 0.5s ease-out;
 }
 
 .todo-item:last-child {
@@ -1413,8 +1542,8 @@ details[open] .todo-section-chevron--up {
   flex-shrink: 0;
   padding: 0.125rem var(--space-sm);
   border-radius: var(--radius-pill);
-  background: var(--color-surface-muted);
-  color: var(--color-text-secondary);
+  background: #dde4ff;
+  color: #3451b2;
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   font-variant-numeric: tabular-nums;
