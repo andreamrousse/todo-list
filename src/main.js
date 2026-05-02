@@ -255,6 +255,7 @@ document.querySelector('#app').innerHTML = `
           autocomplete="new-password"
           placeholder="Re-enter your password"
         />
+        <p class="auth-modal__field-error" id="auth-confirm-error" aria-live="polite"></p>
       </div>
       <button class="auth-modal__button auth-modal__button--primary" type="submit" id="auth-submit" data-auth-action="login">
         Log in
@@ -329,6 +330,7 @@ const authTabs = document.querySelector('#auth-tabs')
 const authSubmitBtn = document.querySelector('#auth-submit')
 const authConfirmGroup = document.querySelector('#auth-confirm-group')
 const authConfirmInput = document.querySelector('#auth-confirm-password')
+const authConfirmError = document.querySelector('#auth-confirm-error')
 const openAuthModalButton = document.querySelector('#open-auth-modal')
 const continueGuestButton = document.querySelector('#continue-guest')
 const authLogoutButton = document.querySelector('#auth-logout')
@@ -365,6 +367,7 @@ let isAddHighlight = false
 let searchQuery = ''
 let isSearchOpen = false
 let isLoading = true
+let isNetworkError = false
 let currentUser = null
 let isAnonymous = true
 let hasBootstrapped = false
@@ -551,10 +554,21 @@ const duePicker = flatpickr(todoDueDateWrap, {
 
 const renderTodos = () => {
   if (isLoading) {
+    todoItemsSection.hidden = true
+    return
+  }
+
+  if (isNetworkError) {
     todoItemsSection.hidden = false
-    todoList.innerHTML = '<li class="todo-item todo-item--empty">Loading todos...</li>'
     todoPendingSection.hidden = false
     todoCompletedSection.hidden = true
+    todoList.innerHTML = `
+      <li class="todo-item todo-item--empty-state">
+        <img src="/network-error.png" alt="" class="todo-item__empty-img" aria-hidden="true" />
+        <p class="todo-item__empty-title">Connection problem</p>
+        <p class="todo-item__empty-subtitle">We couldn't reach the server. Check your connection and try again.</p>
+        <button class="todo-item__retry-btn" data-action="retry-load" type="button">Try again</button>
+      </li>`
     return
   }
 
@@ -665,11 +679,12 @@ const loadTodos = async () => {
   isLoading = false
 
   if (error) {
-    setStatus(`Could not load todos: ${error.message}`, 'error')
+    isNetworkError = true
     renderTodos()
     return
   }
 
+  isNetworkError = false
   todos = data ?? []
   if (todos.length > 0) hasEverHadTodos = true
   setStatus('')
@@ -738,7 +753,9 @@ const bootstrapApp = async () => {
     await refreshAuthState()
     await loadTodos()
   } catch (error) {
-    setAuthStatus(`Could not start session: ${error.message}`, 'error')
+    isLoading = false
+    isNetworkError = true
+    renderTodos()
   } finally {
     hasBootstrapped = true
     updateAuthUi()
@@ -799,6 +816,7 @@ authTabs.addEventListener('click', (e) => {
   authSubmitBtn.dataset.authAction = action
   authSubmitBtn.textContent = isSignup ? 'Create account' : 'Log in'
   authConfirmInput.value = ''
+  authConfirmError.textContent = ''
   authEmailInput.value = ''
   authPasswordInput.value = ''
   setAuthStatus('')
@@ -829,9 +847,11 @@ authForm.addEventListener('submit', async (event) => {
   }
 
   if (authAction === 'signup' && password !== authConfirmInput.value) {
-    setAuthStatus('Passwords do not match.', 'error')
+    authConfirmError.textContent = 'Passwords do not match.'
+    authConfirmInput.focus()
     return
   }
+  authConfirmError.textContent = ''
 
   const startedAsAnonymous = isAnonymous
   let anonymousTodos = []
@@ -937,6 +957,13 @@ todoItemsSection.addEventListener('click', async (event) => {
 
   const action = target.dataset.action
   const id = target.dataset.id
+
+  if (action === 'retry-load') {
+    isNetworkError = false
+    await loadTodos()
+    return
+  }
+
   if (!action || !id) return
 
   const index = todos.findIndex((todo) => todo.id === id)
