@@ -143,6 +143,7 @@ document.querySelector('#app').innerHTML = `
             <path d="M10 18h4"/>
           </svg>
           <span class="todo-toolbar-btn__label">Sort</span>
+          <span class="todo-sort__active-label" id="todo-sort-active-label">Priority</span>
         </button>
         <div class="todo-sort__menu" id="todo-sort-menu" role="menu">
           <button class="todo-sort__option todo-sort__option--active" data-sort="priority" role="menuitemradio" aria-checked="true" type="button">
@@ -151,6 +152,14 @@ document.querySelector('#app').innerHTML = `
           </button>
           <button class="todo-sort__option" data-sort="due" role="menuitemradio" aria-checked="false" type="button">
             <span class="todo-sort__option-label">Due date</span>
+            <svg class="todo-sort__check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          </button>
+          <button class="todo-sort__option" data-sort="alpha" role="menuitemradio" aria-checked="false" type="button">
+            <span class="todo-sort__option-label">Alphabetically</span>
+            <svg class="todo-sort__check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          </button>
+          <button class="todo-sort__option" data-sort="created" role="menuitemradio" aria-checked="false" type="button">
+            <span class="todo-sort__option-label">Creation date</span>
             <svg class="todo-sort__check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
           </button>
         </div>
@@ -318,6 +327,7 @@ const todoSearchInput = document.querySelector('#todo-search')
 const todoSort = document.querySelector('#todo-sort')
 const todoSortToggle = document.querySelector('#todo-sort-toggle')
 const todoSortMenu = document.querySelector('#todo-sort-menu')
+const todoSortActiveLabel = document.querySelector('#todo-sort-active-label')
 const todoList = document.querySelector('#todo-list')
 const todoStatus = document.querySelector('#todo-status')
 const authForm = document.querySelector('#auth-form')
@@ -354,6 +364,13 @@ const compareDue = (a, b) => {
   if (!a.due_date) return 1
   if (!b.due_date) return -1
   return a.due_date.localeCompare(b.due_date)
+}
+const compareAlpha = (a, b) => a.text.localeCompare(b.text, undefined, { sensitivity: 'base' })
+const compareCreated = (a, b) => {
+  if (!a.created_at && !b.created_at) return 0
+  if (!a.created_at) return 1
+  if (!b.created_at) return -1
+  return new Date(b.created_at) - new Date(a.created_at)
 }
 
 let todos = []
@@ -600,7 +617,8 @@ const renderTodos = () => {
 
   todoItemsSection.hidden = false
 
-  const sorter = activeSort === 'due' ? compareDue : comparePriority
+  const sorters = { priority: comparePriority, due: compareDue, alpha: compareAlpha, created: compareCreated }
+  const sorter = sorters[activeSort] ?? comparePriority
   let visible = [...todos].sort(sorter)
   if (searchQuery) {
     visible = visible.filter((t) => t.text.toLowerCase().includes(searchQuery))
@@ -1049,6 +1067,15 @@ todoItemsSection.addEventListener('click', async (event) => {
   renderTodos()
 })
 
+const closeSearch = () => {
+  isSearchOpen = false
+  todoSearchPanel.classList.remove('todo-search--open')
+  todoSearchToggle.setAttribute('aria-expanded', 'false')
+  todoSearchInput.value = ''
+  searchQuery = ''
+  renderTodos()
+}
+
 todoSearchToggle.addEventListener('click', () => {
   isSearchOpen = !isSearchOpen
   todoSearchPanel.classList.toggle('todo-search--open', isSearchOpen)
@@ -1056,9 +1083,15 @@ todoSearchToggle.addEventListener('click', () => {
   if (isSearchOpen) {
     todoSearchInput.focus()
   } else {
-    todoSearchInput.value = ''
-    searchQuery = ''
-    renderTodos()
+    closeSearch()
+  }
+})
+
+document.addEventListener('click', (event) => {
+  if (!isSearchOpen) return
+  if (todoSearchInput.value.trim()) return
+  if (!todoSearchPanel.contains(event.target) && !todoSearchToggle.contains(event.target)) {
+    closeSearch()
   }
 })
 
@@ -1078,10 +1111,11 @@ todoSortToggle.addEventListener('click', (event) => {
   setSortOpen(!isSortOpen)
 })
 
-todoSortMenu.addEventListener('click', (event) => {
-  const btn = event.target.closest('.todo-sort__option')
-  if (!btn) return
+const SORT_LABELS = { priority: 'Priority', due: 'Due date', alpha: 'Alphabetically', created: 'Creation date' }
+
+const setActiveSort = (btn) => {
   activeSort = btn.dataset.sort
+  todoSortActiveLabel.textContent = SORT_LABELS[activeSort] ?? activeSort
   todoSortMenu.querySelectorAll('.todo-sort__option').forEach((b) => {
     const isActive = b === btn
     b.classList.toggle('todo-sort__option--active', isActive)
@@ -1089,6 +1123,12 @@ todoSortMenu.addEventListener('click', (event) => {
   })
   setSortOpen(false)
   renderTodos()
+}
+
+todoSortMenu.addEventListener('click', (event) => {
+  const btn = event.target.closest('.todo-sort__option')
+  if (!btn) return
+  setActiveSort(btn)
 })
 
 document.addEventListener('click', (event) => {
@@ -1098,6 +1138,14 @@ document.addEventListener('click', (event) => {
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && isSortOpen) setSortOpen(false)
+  if (event.key === 'Escape' && isSearchOpen && !todoSearchInput.value.trim()) closeSearch()
+  if (isSortOpen && event.key.length === 1 && /[a-z]/i.test(event.key)) {
+    const key = event.key.toLowerCase()
+    const match = [...todoSortMenu.querySelectorAll('.todo-sort__option')].find(
+      (btn) => btn.dataset.sort.startsWith(key)
+    )
+    if (match) setActiveSort(match)
+  }
 })
 
 const PRIORITY_LABELS = { '': 'None', high: 'High', medium: 'Medium', low: 'Low', trivial: 'Trivial' }

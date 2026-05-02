@@ -1284,8 +1284,20 @@ span.flatpickr-weekday {
   border-color: var(--color-accent);
 }
 
-.todo-search__input:hover {
-  border-color: var(--color-text-tertiary);
+.todo-search__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E");
+  background-size: cover;
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.todo-search__input::-webkit-search-cancel-button:hover {
+  opacity: 0.8;
 }
 
 .todo-items__search-toggle {
@@ -1313,6 +1325,18 @@ span.flatpickr-weekday {
   position: relative;
   flex-shrink: 0;
 }
+
+.todo-sort__active-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
 
 .todo-sort__toggle {
   display: flex;
