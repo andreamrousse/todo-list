@@ -517,8 +517,16 @@ const formatDueDate = (iso) => {
 
 const dueDateChip = (todo) => {
   if (!todo.due_date) return ''
-  const overdue = !todo.completed && todo.due_date < todayIsoDate()
-  return `<span class="todo-item__due${overdue ? ' todo-item__due--overdue' : ''}">${formatDueDate(todo.due_date)}</span>`
+  const today = todayIsoDate()
+  const overdue = !todo.completed && todo.due_date < today
+  const soon = !overdue && !todo.completed && (() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 7)
+    const in7 = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    return todo.due_date >= today && todo.due_date <= in7
+  })()
+  const cls = overdue ? ' todo-item__due--overdue' : soon ? ' todo-item__due--soon' : ''
+  return `<span class="todo-item__due${cls}">${formatDueDate(todo.due_date)}</span>`
 }
 
 const buildTodoItem = (todo) => `

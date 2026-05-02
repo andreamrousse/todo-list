@@ -1666,6 +1666,11 @@ details[open] .todo-section-chevron--up {
   color: var(--color-danger);
 }
 
+.todo-item__due--soon {
+  background: rgba(255, 159, 10, 0.1);
+  color: var(--color-warning);
+}
+
 .todo-item--completed .todo-item__due {
   opacity: 0.6;
 }
