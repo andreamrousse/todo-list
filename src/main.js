@@ -10,6 +10,7 @@ import {
   supabase
 } from './supabaseClient'
 
+// ── HTML template ──────────────────────────────────────────────
 document.querySelector('#app').innerHTML = `
 <main class="todo-app">
   <header class="todo-app__header">
@@ -279,6 +280,8 @@ document.querySelector('#app').innerHTML = `
 </section>
 `
 
+// ── DOM refs ───────────────────────────────────────────────────
+// Task input form
 const todoForm = document.querySelector('#todo-form')
 const todoInput = document.querySelector('#todo-input')
 
@@ -305,6 +308,7 @@ todoInput.addEventListener('input', () => {
   }
 })
 
+// Priority picker + date picker
 const todoPrioritySelect = document.querySelector('#todo-priority')
 const todoPriorityPicker = document.querySelector('#todo-priority-picker')
 const todoPriorityToggle = document.querySelector('#todo-priority-toggle')
@@ -315,6 +319,7 @@ const todoDueDateInput = document.querySelector('#todo-due-date')
 const todoDueDateWrap = document.querySelector('#todo-due-date-wrap')
 const todoDueDateBtn = document.querySelector('#todo-due-date-btn')
 const todoDueDateLabel = document.querySelector('#todo-due-date-label')
+// Task list + toolbar
 const todoListCompleted = document.querySelector('#todo-list-completed')
 const todoItemsSection = document.querySelector('.todo-items')
 const todoPendingSection = document.querySelector('#todo-pending-section')
@@ -330,6 +335,7 @@ const todoSortMenu = document.querySelector('#todo-sort-menu')
 const todoSortActiveLabel = document.querySelector('#todo-sort-active-label')
 const todoList = document.querySelector('#todo-list')
 const todoStatus = document.querySelector('#todo-status')
+// Auth modal
 const authForm = document.querySelector('#auth-form')
 const authEmailInput = document.querySelector('#auth-email')
 const authPasswordInput = document.querySelector('#auth-password')
@@ -345,6 +351,7 @@ const openAuthModalButton = document.querySelector('#open-auth-modal')
 const continueGuestButton = document.querySelector('#continue-guest')
 const authLogoutButton = document.querySelector('#auth-logout')
 const authModalCloseButton = document.querySelector('#auth-modal-close')
+// User menu + snackbar
 const userMenu = document.querySelector('#user-menu')
 const userMenuToggle = document.querySelector('#user-menu-toggle')
 const userMenuDropdown = document.querySelector('#user-menu-dropdown')
@@ -352,6 +359,7 @@ const userMenuInitial = document.querySelector('#user-menu-initial')
 const userMenuEmail = document.querySelector('#user-menu-email')
 const snackbarContainer = document.querySelector('#snackbar-container')
 
+// ── Sort comparators ───────────────────────────────────────────
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2, trivial: 3 }
 
 const comparePriority = (a, b) => {
@@ -373,14 +381,15 @@ const compareCreated = (a, b) => {
   return new Date(b.created_at) - new Date(a.created_at)
 }
 
+// ── App state ──────────────────────────────────────────────────
 let todos = []
 let activeSort = 'priority'
 let isSortOpen = false
 let isPriorityOpen = false
 let shouldAnimateAdd = false
-let highlightId = null
-let highlightDelay = 0
-let isAddHighlight = false
+let highlightId = null    // ID of the todo to animate after the next render
+let highlightDelay = 0    // ms to wait before triggering the animation
+let isAddHighlight = false // true → use the "slide in" animation; false → use the flash animation
 let searchQuery = ''
 let isSearchOpen = false
 let isLoading = true
@@ -388,9 +397,10 @@ let isNetworkError = false
 let currentUser = null
 let isAnonymous = true
 let hasBootstrapped = false
-let hasEverHadTodos = false
-const pendingDeletes = new Map()
+let hasEverHadTodos = false // keeps the list section hidden until the user has created at least one task
+const pendingDeletes = new Map() // soft-delete buffer: id → { todo, timerId, el }; undo cancels the timer
 
+// ── Utilities ──────────────────────────────────────────────────
 const escapeHtml = (value) =>
   value
     .replaceAll('&', '&amp;')
@@ -412,6 +422,7 @@ const setStatus = (message = '', type = '') => {
   }
 }
 
+// ── Snackbar ───────────────────────────────────────────────────
 const removeSnackbar = (el) => {
   if (!el || !el.parentNode) return
   el.classList.add('snackbar--hiding')
@@ -436,6 +447,7 @@ const createSnackbar = (message, onUndo) => {
   return el
 }
 
+// ── Auth status ────────────────────────────────────────────────
 const ICON_ALERT = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="flex-shrink:0;margin-top:1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1"/></svg>`
 const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="flex-shrink:0;margin-top:1px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>`
 
@@ -458,6 +470,7 @@ const setAuthStatus = (message = '', type = '') => {
   }
 }
 
+// Composite key used during anon→user migration to skip duplicates
 const getTodoDedupeKey = (todo) => `${todo.text}::${todo.completed ? '1' : '0'}::${todo.created_at}`
 
 const openAuthModal = (options = {}) => {
@@ -507,6 +520,7 @@ const updateAuthUi = () => {
   authActionsEl?.removeAttribute('data-auth-hidden')
 }
 
+// ── Date helpers ───────────────────────────────────────────────
 const todayIsoDate = () => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -524,16 +538,15 @@ const formatDueDate = (iso) => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+// ── Todo rendering ─────────────────────────────────────────────
 const dueDateChip = (todo) => {
   if (!todo.due_date) return ''
   const today = todayIsoDate()
   const overdue = !todo.completed && todo.due_date < today
-  const soon = !overdue && !todo.completed && (() => {
-    const d = new Date()
-    d.setDate(d.getDate() + 7)
-    const in7 = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    return todo.due_date >= today && todo.due_date <= in7
-  })()
+  const sevenDaysOut = new Date()
+  sevenDaysOut.setDate(sevenDaysOut.getDate() + 7)
+  const in7 = `${sevenDaysOut.getFullYear()}-${String(sevenDaysOut.getMonth() + 1).padStart(2, '0')}-${String(sevenDaysOut.getDate()).padStart(2, '0')}`
+  const soon = !overdue && !todo.completed && todo.due_date >= today && todo.due_date <= in7
   const cls = overdue ? ' todo-item__due--overdue' : soon ? ' todo-item__due--soon' : ''
   return `<span class="todo-item__due${cls}">${formatDueDate(todo.due_date)}</span>`
 }
@@ -591,6 +604,7 @@ const duePicker = flatpickr(todoDueDateWrap, {
   },
 })
 
+// ── Render ─────────────────────────────────────────────────────
 const renderTodos = () => {
   if (isLoading) {
     todoItemsSection.hidden = true
@@ -704,6 +718,7 @@ const renderTodos = () => {
   }
 }
 
+// ── Data loading ───────────────────────────────────────────────
 const loadTodos = async () => {
   if (!currentUser) return
 
@@ -781,6 +796,7 @@ const collectCurrentAnonymousTodos = async () => {
   return data ?? []
 }
 
+// ── Auth helpers ───────────────────────────────────────────────
 const refreshAuthState = async () => {
   currentUser = await getCurrentUser()
   isAnonymous = Boolean(currentUser?.is_anonymous)
@@ -802,6 +818,7 @@ const bootstrapApp = async () => {
   }
 }
 
+// ── Event handlers ─────────────────────────────────────────────
 todoForm.addEventListener('submit', async (event) => {
   event.preventDefault()
 
@@ -896,6 +913,7 @@ authForm.addEventListener('submit', async (event) => {
   const startedAsAnonymous = isAnonymous
   let anonymousTodos = []
 
+  // Flow: capture anon todos → sign in/up → merge into the real account → reload
   try {
     if (startedAsAnonymous) {
       anonymousTodos = await collectCurrentAnonymousTodos()
@@ -1230,6 +1248,9 @@ supabase.auth.onAuthStateChange(async (event) => {
     return
   }
 
+  // SIGNED_OUT is handled explicitly by the logout button handler; ignore it here
+  // to avoid double-loading. This listener is primarily for external sign-ins
+  // (e.g. magic links, account confirmation, or a sign-in in another tab).
   if (event === 'SIGNED_OUT') {
     return
   }
@@ -1242,6 +1263,7 @@ supabase.auth.onAuthStateChange(async (event) => {
   }
 })
 
+// Re-sync auth when the page is restored from the browser's back/forward cache
 window.addEventListener('pageshow', (e) => {
   if (e.persisted) {
     refreshAuthState().catch(() => {})

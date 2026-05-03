@@ -18,9 +18,30 @@
   --color-accent: #1e3a8a;
   --color-accent-hover: #1e40af;
   --color-accent-soft: rgba(30, 58, 138, 0.1);
+  --color-accent-tint: rgba(30, 58, 138, 0.08);
+  --color-accent-tint-hover: rgba(30, 58, 138, 0.13);
+  --color-accent-border-active: rgba(30, 58, 138, 0.2);
+  --color-accent-focus-ring: rgba(30, 58, 138, 0.15);
+  --color-on-accent: #ffffff;
   --color-success: #30d158;
+  --color-success-deep: #1a7f3c;
+  --color-success-soft: rgba(26, 127, 60, 0.07);
   --color-danger: #ff3b30;
+  --color-danger-tint: rgba(255, 59, 48, 0.1);
+  --color-danger-soft: rgba(255, 59, 48, 0.07);
   --color-warning: #ff9f0a;
+  --color-warning-tint: rgba(255, 159, 10, 0.1);
+  --color-section-title: #6366f1;
+  --color-surface-accent: #f5f7ff;
+  --color-surface-accent-hover: #e8eeff;
+  --color-surface-accent-highlight: #e0eaff;
+  --color-due-bg: #dde4ff;
+  --color-due-text: #3451b2;
+  --color-inverse-surface: #2c2c2e;
+  --color-on-inverse: #ffffff;
+  --color-on-inverse-muted: rgba(255, 255, 255, 0.85);
+  --color-cta-surface: #111111;
+  --color-cta-surface-hover: #333333;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -358,12 +379,12 @@ code {
 .todo-brand__icon {
   width: 38px;
   height: 38px;
-  background: #1e3a8a;
+  background: var(--color-accent);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--color-on-accent);
   flex-shrink: 0;
 }
 
@@ -394,11 +415,11 @@ code {
 }
 
 .todo-app__auth-button {
-  border: 1.5px solid #111;
+  border: 1.5px solid var(--color-cta-surface);
   border-radius: var(--radius-pill);
   padding: 0.375rem var(--space-md);
-  background: #111;
-  color: #fff;
+  background: var(--color-cta-surface);
+  color: var(--color-on-accent);
   font: inherit;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
@@ -407,8 +428,8 @@ code {
 }
 
 .todo-app__auth-button:hover {
-  background: #333;
-  border-color: #333;
+  background: var(--color-cta-surface-hover);
+  border-color: var(--color-cta-surface-hover);
 }
 
 .todo-app__auth-button--ghost {
@@ -432,7 +453,7 @@ code {
   height: 2rem;
   border-radius: 50%;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   border: none;
   cursor: pointer;
   display: flex;
@@ -458,7 +479,7 @@ code {
 .user-menu__dropdown {
   display: none;
   position: absolute;
-  top: calc(100% + 0.5rem);
+  top: calc(100% + var(--space-sm));
   right: 0;
   min-width: 14rem;
   background: var(--color-surface);
@@ -507,7 +528,7 @@ code {
 }
 
 .user-menu__logout:hover {
-  background: rgba(255, 59, 48, 0.08);
+  background: var(--color-danger-tint);
 }
 
 .auth-modal {
@@ -593,6 +614,10 @@ code {
   gap: var(--space-md);
 }
 
+.auth-modal__form > button[type='submit'] {
+  margin-top: var(--space-xl);
+}
+
 .auth-modal__field-group {
   display: grid;
   gap: var(--space-xs);
@@ -600,13 +625,9 @@ code {
 
 .auth-modal__field-error {
   margin: 0;
-  padding: 0.2rem var(--space-sm);
+  padding-left: var(--space-sm);
   font-size: var(--font-size-xs);
   color: var(--color-danger);
-  background: rgba(255, 59, 48, 0.07);
-  border-radius: var(--radius-sm);
-  border-left: 2px solid var(--color-danger);
-  line-height: 1.45;
 }
 
 .auth-modal__field-error:empty {
@@ -646,7 +667,7 @@ code {
   outline: none;
   background: var(--color-surface);
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+  box-shadow: 0 0 0 3px var(--color-accent-focus-ring);
 }
 
 .auth-modal__tabs {
@@ -697,7 +718,7 @@ code {
 
 .auth-modal__button--primary {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   border-color: var(--color-accent);
   width: 100%;
   margin-top: var(--space-xs);
@@ -769,18 +790,18 @@ code {
 
 .auth-modal__status--error {
   color: var(--color-danger);
-  background: rgba(255, 59, 48, 0.07);
+  background: var(--color-danger-soft);
 }
 
 .auth-modal__status--success {
-  color: #1a7f3c;
-  background: rgba(26, 127, 60, 0.07);
+  color: var(--color-success-deep);
+  background: var(--color-success-soft);
 }
 
 .todo-section__title {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
-  color: #6366f1;
+  color: var(--color-section-title);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0 0 var(--space-lg);
@@ -886,7 +907,7 @@ code {
   outline: none;
   background: var(--color-surface);
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+  box-shadow: 0 0 0 3px var(--color-accent-focus-ring);
 }
 
 /* ── Priority picker ─────────────────────────────────────────── */
@@ -921,7 +942,7 @@ code {
 .todo-priority-picker__toggle:focus-visible {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+  box-shadow: 0 0 0 3px var(--color-accent-focus-ring);
 }
 
 .todo-priority-picker__dot {
@@ -1069,17 +1090,17 @@ code {
 .todo-input__date-btn:focus-visible {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+  box-shadow: 0 0 0 3px var(--color-accent-focus-ring);
 }
 
 .todo-input__date-btn--active {
-  background: rgba(30, 58, 138, 0.08);
+  background: var(--color-accent-tint);
   color: var(--color-accent);
-  border-color: rgba(30, 58, 138, 0.2);
+  border-color: var(--color-accent-border-active);
 }
 
 .todo-input__date-btn--active:hover {
-  background: rgba(30, 58, 138, 0.13);
+  background: var(--color-accent-tint-hover);
   color: var(--color-accent);
 }
 
@@ -1164,7 +1185,7 @@ span.flatpickr-weekday {
 }
 
 .flatpickr-day.today:hover {
-  background: rgba(30, 58, 138, 0.08);
+  background: var(--color-accent-tint);
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
@@ -1173,7 +1194,7 @@ span.flatpickr-weekday {
 .flatpickr-day.selected:hover {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 
 .flatpickr-day.flatpickr-disabled,
@@ -1205,7 +1226,7 @@ span.flatpickr-weekday {
   border-radius: var(--radius-pill);
   padding: 0 var(--space-lg);
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font: inherit;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
@@ -1545,7 +1566,7 @@ details[open] .todo-section-chevron--up {
   gap: var(--space-md);
   padding: 0.875rem var(--space-lg);
   border-bottom: 1px solid var(--color-border);
-  background: #f5f7ff;
+  background: var(--color-surface-accent);
   transition: background 0.15s ease;
   position: relative;
 }
@@ -1561,7 +1582,7 @@ details[open] .todo-section-chevron--up {
 }
 
 @keyframes todoHighlight {
-  30% { background: #e0eaff; }
+  30% { background: var(--color-surface-accent-highlight); }
 }
 
 .todo-item--highlight {
@@ -1570,8 +1591,8 @@ details[open] .todo-section-chevron--up {
 
 @keyframes todoAddHighlight {
   0%  { opacity: 0; transform: translateY(-4px); }
-  20% { opacity: 1; transform: translateY(0); background: #e0eaff; }
-  50% { background: #e0eaff; }
+  20% { opacity: 1; transform: translateY(0); background: var(--color-surface-accent-highlight); }
+  50% { background: var(--color-surface-accent-highlight); }
 }
 
 .todo-item--add-highlight {
@@ -1583,7 +1604,7 @@ details[open] .todo-section-chevron--up {
 }
 
 .todo-item:hover {
-  background: #e8eeff;
+  background: var(--color-surface-accent-hover);
 }
 
 .todo-item--completed:hover {
@@ -1665,8 +1686,8 @@ details[open] .todo-section-chevron--up {
   flex-shrink: 0;
   padding: 0.125rem var(--space-sm);
   border-radius: var(--radius-pill);
-  background: #dde4ff;
-  color: #3451b2;
+  background: var(--color-due-bg);
+  color: var(--color-due-text);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   font-variant-numeric: tabular-nums;
@@ -1674,12 +1695,12 @@ details[open] .todo-section-chevron--up {
 }
 
 .todo-item__due--overdue {
-  background: rgba(255, 59, 48, 0.1);
+  background: var(--color-danger-tint);
   color: var(--color-danger);
 }
 
 .todo-item__due--soon {
-  background: rgba(255, 159, 10, 0.1);
+  background: var(--color-warning-tint);
   color: var(--color-warning);
 }
 
@@ -1703,7 +1724,7 @@ details[open] .todo-section-chevron--up {
 }
 
 .todo-item__delete:hover {
-  background: rgba(255, 59, 48, 0.1);
+  background: var(--color-danger-tint);
   color: var(--color-danger);
 }
 
@@ -1913,8 +1934,8 @@ details[open] .todo-section-chevron--up {
   align-items: center;
   gap: var(--space-lg);
   padding: var(--space-md) var(--space-md) var(--space-md) var(--space-xl);
-  background: #2c2c2e;
-  color: #ffffff;
+  background: var(--color-inverse-surface);
+  color: var(--color-on-inverse);
   border-radius: var(--radius-pill);
   box-shadow: var(--shadow-lg);
   font-size: var(--font-size-sm);
@@ -1928,7 +1949,7 @@ details[open] .todo-section-chevron--up {
 }
 
 .snackbar__message {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--color-on-inverse-muted);
 }
 
 .snackbar__undo {
@@ -1936,7 +1957,7 @@ details[open] .todo-section-chevron--up {
   border: none;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  color: var(--color-on-inverse);
   font-family: var(--font-family-body);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
