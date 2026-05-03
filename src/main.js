@@ -436,16 +436,25 @@ const createSnackbar = (message, onUndo) => {
   return el
 }
 
+const ICON_ALERT = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="flex-shrink:0;margin-top:1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1"/></svg>`
+const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="flex-shrink:0;margin-top:1px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>`
+
 const setAuthStatus = (message = '', type = '') => {
-  authStatus.textContent = message
   authStatus.classList.remove('auth-modal__status--error', 'auth-modal__status--success')
+
+  if (!message) {
+    authStatus.innerHTML = ''
+    return
+  }
 
   if (type === 'error') {
     authStatus.classList.add('auth-modal__status--error')
-  }
-
-  if (type === 'success') {
+    authStatus.innerHTML = `${ICON_ALERT}<span>${message}</span>`
+  } else if (type === 'success') {
     authStatus.classList.add('auth-modal__status--success')
+    authStatus.innerHTML = `${ICON_CHECK}<span>${message}</span>`
+  } else {
+    authStatus.textContent = message
   }
 }
 
@@ -919,11 +928,19 @@ authForm.addEventListener('submit', async (event) => {
     closeAuthModal()
     setAuthStatus('Account connected and todos merged.', 'success')
   } catch (error) {
-    const msg = error?.message ?? ''
-    if (msg.toLowerCase().includes('rate limit')) {
+    const msg = (error?.message ?? '').toLowerCase()
+    if (msg.includes('rate limit') || msg.includes('too many')) {
       setAuthStatus('Too many attempts — please wait a moment and try again.', 'error')
+    } else if (msg.includes('invalid login') || msg.includes('invalid credentials') || msg.includes('wrong password')) {
+      setAuthStatus('Incorrect email or password.', 'error')
+    } else if (msg.includes('email not confirmed')) {
+      setAuthStatus('Please confirm your email before signing in.', 'error')
+    } else if (msg.includes('user already registered') || msg.includes('already been registered')) {
+      setAuthStatus('An account with this email already exists.', 'error')
+    } else if (msg.includes('unable to validate') || msg.includes('network') || msg.includes('fetch')) {
+      setAuthStatus('Connection error — check your internet and try again.', 'error')
     } else {
-      setAuthStatus(`Could not complete auth: ${msg}`, 'error')
+      setAuthStatus('Something went wrong. Please try again.', 'error')
     }
   } finally {
     updateAuthUi()

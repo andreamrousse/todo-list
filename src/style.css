@@ -600,9 +600,13 @@ code {
 
 .auth-modal__field-error {
   margin: 0;
-  padding-left: var(--space-sm);
+  padding: 0.2rem var(--space-sm);
   font-size: var(--font-size-xs);
   color: var(--color-danger);
+  background: rgba(255, 59, 48, 0.07);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--color-danger);
+  line-height: 1.45;
 }
 
 .auth-modal__field-error:empty {
@@ -749,8 +753,14 @@ code {
 }
 
 .auth-modal__status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
   font-size: var(--font-size-sm);
-  text-align: center;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  text-align: left;
+  line-height: 1.45;
 }
 
 .auth-modal__status:empty {
@@ -759,10 +769,12 @@ code {
 
 .auth-modal__status--error {
   color: var(--color-danger);
+  background: rgba(255, 59, 48, 0.07);
 }
 
 .auth-modal__status--success {
   color: #1a7f3c;
+  background: rgba(26, 127, 60, 0.07);
 }
 
 .todo-section__title {
