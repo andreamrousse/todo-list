@@ -1524,8 +1524,8 @@ details[open] .todo-section-chevron--up {
 }
 
 #todo-pending-count {
-  background: var(--color-accent);
-  color: #fff;
+  background: var(--color-section-title);
+  color: var(--color-on-accent);
 }
 
 #todo-completed-count {
