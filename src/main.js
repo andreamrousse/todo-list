@@ -127,7 +127,7 @@ document.querySelector('#app').innerHTML = `
   </section>
 
   <section class="todo-items" aria-label="Todo items" hidden>
-    <div class="todo-items__toolbar">
+    <div class="todo-items__toolbar" id="todo-items-toolbar">
       <h2 class="todo-section__title">My tasks</h2>
       <div class="todo-sort" id="todo-sort">
         <button
@@ -192,7 +192,7 @@ document.querySelector('#app').innerHTML = `
       </div>
     </div>
     <details class="todo-pending-section" id="todo-pending-section" open hidden>
-      <summary class="todo-completed-section__summary">
+      <summary class="todo-completed-section__summary" id="todo-pending-summary">
         <svg class="todo-section-chevron todo-section-chevron--down" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         <svg class="todo-section-chevron todo-section-chevron--up" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 15l-6-6-6 6"/></svg>
         Pending <span class="todo-completed-section__count" id="todo-pending-count">0</span>
@@ -322,7 +322,9 @@ const todoDueDateLabel = document.querySelector('#todo-due-date-label')
 // Task list + toolbar
 const todoListCompleted = document.querySelector('#todo-list-completed')
 const todoItemsSection = document.querySelector('.todo-items')
+const todoItemsToolbar = document.querySelector('#todo-items-toolbar')
 const todoPendingSection = document.querySelector('#todo-pending-section')
+const todoPendingSummary = document.querySelector('#todo-pending-summary')
 const todoPendingCount = document.querySelector('#todo-pending-count')
 const todoCompletedSection = document.querySelector('#todo-completed-section')
 const todoCompletedCount = document.querySelector('#todo-completed-count')
@@ -614,6 +616,7 @@ const renderTodos = () => {
   if (isNetworkError) {
     todoItemsSection.hidden = false
     todoPendingSection.hidden = false
+    todoPendingSummary.hidden = false
     todoCompletedSection.hidden = true
     todoList.innerHTML = `
       <li class="todo-item todo-item--empty-state">
@@ -630,7 +633,10 @@ const renderTodos = () => {
       todoItemsSection.hidden = true
     } else {
       todoItemsSection.hidden = false
+      todoItemsToolbar.hidden = true
+      if (isSearchOpen) closeSearch()
       todoPendingSection.hidden = false
+      todoPendingSummary.hidden = false
       todoPendingCount.textContent = '0'
       if (!todoList.querySelector('.todo-item--empty-state')) {
         todoList.innerHTML = `
@@ -647,6 +653,7 @@ const renderTodos = () => {
   }
 
   todoItemsSection.hidden = false
+  todoItemsToolbar.hidden = false
 
   const sorters = { priority: comparePriority, due: compareDue, alpha: compareAlpha, created: compareCreated }
   const sorter = sorters[activeSort] ?? comparePriority
@@ -664,15 +671,21 @@ const renderTodos = () => {
   todoList.classList.toggle('todo-items__list--animate', shouldAnimateAdd)
   shouldAnimateAdd = false
 
-  if (active.length === 0) {
-    const emptyType = searchQuery ? 'search' : 'all-done'
+  if (searchQuery && active.length === 0 && done.length > 0) {
+    // Matches exist only in completed — hide the pending section to avoid distraction
+    todoPendingSummary.hidden = false
+    todoPendingSection.hidden = true
+    todoList.innerHTML = ''
+  } else if (active.length === 0) {
+    const emptyType = searchQuery && visible.length === 0 ? 'search' : 'all-done'
+    todoPendingSummary.hidden = emptyType === 'search'
     const existingEmpty = todoList.querySelector('.todo-item--empty-state')
     if (!existingEmpty || existingEmpty.dataset.emptyType !== emptyType) {
       todoList.innerHTML = searchQuery
         ? `<li class="todo-item todo-item--empty-state" data-empty-type="search">
             <img src="/empty-search.png" alt="" class="todo-item__empty-img" aria-hidden="true" />
             <p class="todo-item__empty-title">No results found</p>
-            <p class="todo-item__empty-subtitle">No tasks match your search. Try a different keyword.</p>
+            <p class="todo-item__empty-subtitle">Nothing in My tasks matches your search. Try a different keyword.</p>
           </li>`
         : `<li class="todo-item todo-item--empty-state" data-empty-type="all-done">
             <img src="/empty-state.png" alt="" class="todo-item__empty-img" aria-hidden="true" />
@@ -681,6 +694,7 @@ const renderTodos = () => {
           </li>`
     }
   } else {
+    todoPendingSummary.hidden = false
     todoList.innerHTML = active.map(buildTodoItem).join('')
   }
 
